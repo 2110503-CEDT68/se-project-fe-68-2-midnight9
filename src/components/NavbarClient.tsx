@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
+import ActiveLink from './ActiveLink'
 
 export default function NavbarClient({ session }: { session: any }) {
   const pathname = usePathname()
@@ -10,9 +11,11 @@ export default function NavbarClient({ session }: { session: any }) {
   if (session) {
     return (
       <div className="flex items-center gap-3 p-3">
-        <span className="text-sm text-green-700 hidden sm:block font-bold p-3">
+        {/* <span className="text-sm text-green-700 hidden sm:block font-bold p-3"
+          onClick={() => }>
           {session.user?.name}
-        </span>
+        </span> */}
+        <ActiveLink href="/profile" className="nav-link text-sm text-green-700 hidden sm:block font-bold p-3">{session.user?.name}</ActiveLink>
         {/* Remove Profile link — My Bookings is already in the nav for users
             Admin does not get Profile either since they use the Admin tab */}
         <button

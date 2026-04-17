@@ -45,3 +45,11 @@ export function registerUser(name: string, email: string, tel: string, password:
     body: JSON.stringify({ name, email, tel, password }),
   })
 }
+
+export function getMe(token: string) {
+  return apiFetch('/auth/me', {
+    headers: { authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  })
+}
+
