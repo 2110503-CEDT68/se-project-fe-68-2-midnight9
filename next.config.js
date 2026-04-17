@@ -7,7 +7,8 @@ module.exports = {
       {
         protocol: 'https',
         hostname: 'drive.google.com',
+        pathname: '/uc',
       },
     ],
-  }
+  },
 }
