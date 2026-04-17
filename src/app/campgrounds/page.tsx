@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
+import Link from 'next/link'
 import { getCampgrounds } from '@/libs'
 import CampgroundCard from '@/components/CampgroundCard'
 
@@ -8,6 +9,7 @@ const REGIONS = ['All', 'Central', 'Northern', 'Northeastern', 'Eastern', 'South
 
 export default function CampgroundsPage() {
   const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'admin'
   const [campgrounds, setCampgrounds] = useState<any[]>([])
   const [loading, setLoading]         = useState(true)
 
@@ -186,6 +188,14 @@ export default function CampgroundsPage() {
           {filtered.map((c, i) => (
             <CampgroundCard key={c._id} camp={c} index={i}/>
           ))}
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="mt-8 flex justify-end">
+          <Link href="/admin/campgrounds/create" className="btn-primary text-xs px-8 py-2">
+            Create New Campground
+          </Link>
         </div>
       )}
 
