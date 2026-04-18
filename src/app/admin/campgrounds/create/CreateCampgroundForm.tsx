@@ -6,15 +6,26 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { apiFetch } from '@/libs/api'
 
+// const initialForm = {
+//   name: 'Sunset Tent Camp',
+//   picture: 'https://drive.google.com/uc?export=view&id=1gCupMAwL4zGZV6JYyusz9FEeCR1CImNP',
+//   address: 'Ban Luang',
+//   district: 'Chom Thong',
+//   province: 'Chiang Mai',
+//   region: 'Northern',
+//   tel: '053286728',
+//   postalcode: '50160',
+// }
+
 const initialForm = {
-  name: 'Sunset Tent Camp',
-  picture: 'https://drive.google.com/uc?export=view&id=1gCupMAwL4zGZV6JYyusz9FEeCR1CImNP',
-  address: 'Ban Luang',
-  district: 'Chom Thong',
-  province: 'Chiang Mai',
-  region: 'Northern',
-  tel: '053286728',
-  postalcode: '50160',
+  name: '',
+  picture: '',
+  address: '',
+  district: '',
+  province: '',
+  region: '',
+  tel: '',
+  postalcode: '',
 }
 
 export default function CreateCampgroundForm() {
