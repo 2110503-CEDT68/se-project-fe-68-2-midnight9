@@ -13,16 +13,12 @@ export default function RegisterForm() {
   
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
   const [showTerms, setShowTerms] = useState(false)
   const [scrolledToBottom, setScrolledToBottom] = useState(false)
   const [hasReadTerms, setHasReadTerms] = useState(false)
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }))
-
-  const setCheckbox = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [field]: e.target.checked }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,8 +65,9 @@ export default function RegisterForm() {
 
       <div className="grid sm:grid-cols-2 gap-x-5 gap-y-4 mb-4">
         <div>
-          <label className="form-label">Full Name</label>
+          <label htmlFor="name" className="form-label">Full Name</label>
           <input
+            id="name"
             className="form-input"
             placeholder="Your name"
             value={form.name}
@@ -78,8 +75,9 @@ export default function RegisterForm() {
           />
         </div>
         <div>
-          <label className="form-label">Phone Number</label>
+          <label htmlFor="tel" className="form-label">Phone Number</label>
           <input
+            id="tel"
             type="tel"
             className="form-input"
             placeholder="081-234-5678"
@@ -90,8 +88,9 @@ export default function RegisterForm() {
       </div>
 
       <div className="mb-4">
-        <label className="form-label">Email</label>
+        <label htmlFor="email" className="form-label">Email</label>
         <input
+          id="email"
           type="email"
           className="form-input"
           placeholder="user@example.com"
@@ -102,8 +101,9 @@ export default function RegisterForm() {
 
       <div className="grid sm:grid-cols-2 gap-x-5 gap-y-4 mb-6">
         <div>
-          <label className="form-label">Password</label>
+          <label htmlFor="password" className="form-label">Password</label>
           <input
+            id="password"
             type="password"
             className="form-input"
             placeholder="Password (min 6 chars)"
@@ -112,8 +112,9 @@ export default function RegisterForm() {
           />
         </div>
         <div>
-          <label className="form-label">Confirm Password</label>
+          <label htmlFor="confirm" className="form-label">Confirm Password</label>
           <input
+            id="confirm"
             type="password"
             className="form-input"
             placeholder="Confirm password"
@@ -167,90 +168,42 @@ export default function RegisterForm() {
       {showTerms && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-xl shadow-xl flex flex-col overflow-hidden">
-            
-            {/* Header */}
             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
               <h2 className="font-semibold text-lg text-gray-900">Terms of Service</h2>
               <button 
                 type="button"
                 onClick={() => setShowTerms(false)}
                 className="text-gray-500 hover:text-gray-700 font-bold px-2"
-              >
-                ✕
-              </button>
+              >✕</button>
             </div>
 
-            {/* Content (scrollable) */}
             <div
               className="p-6 overflow-y-auto text-sm leading-relaxed text-gray-700 space-y-6"
               onScroll={(e) => {
-                const el = e.currentTarget
-                if (Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) <= 2) {
-                  setScrolledToBottom(true)
-                  setHasReadTerms(true)
+                const el = e.currentTarget;
+                const isBottom = el.scrollHeight <= el.clientHeight || 
+                                Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) <= 5;
+                
+                if (isBottom) {
+                  setScrolledToBottom(true);
+                  setHasReadTerms(true);
                 }
               }}
             >
-              <section>
-                <h2 className="font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h2>
-                <p>By creating an account or using our service, you agree to be bound by these Terms of Service. If you do not agree, please do not use the service.</p>
-              </section>
-
-              <section>
-                <h2 className="font-semibold text-gray-900 mb-2">2. Use of the Service</h2>
-                <p className="mb-2">You agree to use the service only for lawful purposes and in accordance with these terms.</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Use the service for any illegal or unauthorized purpose</li>
-                  <li>Attempt to gain unauthorized access to the system</li>
-                  <li>Disrupt or interfere with the service or servers</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="font-semibold text-gray-900 mb-2">3. User Accounts</h2>
-                <p>You are responsible for maintaining the confidentiality of your account and password. You agree to provide accurate and complete information when registering.</p>
-              </section>
-
-              <section>
-                <h2 className="font-semibold text-gray-900 mb-2">4. Privacy</h2>
-                <p>Your use of the service is also governed by our Privacy Policy.</p>
-              </section>
-
-              <section>
-                <h2 className="font-semibold text-gray-900 mb-2">5. Content and Data</h2>
-                <p>You retain ownership of any content you provide. However, you grant us a limited license to use, store, and process that content for operating the service.</p>
-              </section>
-              
-              <section>
-                <h2 className="font-semibold text-gray-900 mb-2">6. Service Availability</h2>
-                <p>We do not guarantee uninterrupted service and may modify or discontinue features at any time.</p>
-              </section>
-
-              <section>
-                <h2 className="font-semibold text-gray-900 mb-2">7. Limitation of Liability</h2>
-                <p>We are not liable for indirect or consequential damages arising from your use of the service.</p>
-              </section>
-
-              <section>
-                <h2 className="font-semibold text-gray-900 mb-2">8. Termination</h2>
-                <p>We may suspend or terminate your account if you violate these terms.</p>
-              </section>
+              <section><h2 className="font-semibold">1. Acceptance...</h2><p>...</p></section>
             </div>
 
-            {/* Footer */}
             <div className="p-4 border-t flex justify-end gap-3 bg-gray-50">
               <button
                 type="button"
-                className="px-5 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition"
+                className="px-5 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
                 onClick={() => setShowTerms(false)}
-              >
-                Close
-              </button>
+              >Close</button>
 
               <button
                 type="button"
                 className={`px-5 py-2 rounded-md font-medium text-white transition ${
-                  scrolledToBottom ? 'bg-green-700 hover:bg-green-800' : 'bg-green-700 hover:bg-green-800 opacity-50 cursor-not-allowed'
+                  scrolledToBottom ? 'bg-green-700 hover:bg-green-800' : 'bg-green-700 opacity-50 cursor-not-allowed'
                 }`}
                 disabled={!scrolledToBottom}
                 onClick={() => {
@@ -259,7 +212,7 @@ export default function RegisterForm() {
                   setShowTerms(false)
                 }}
               >
-                {scrolledToBottom ? 'Accept Terms' : 'Scroll to bottom to accept'}
+                Accept Terms
               </button>
             </div>
           </div>
