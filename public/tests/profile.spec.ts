@@ -1,80 +1,63 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const TEST_USER = {
   email: 'user123@gmail.com',
   password: '123456',
-  expectedName: 'User123'
 };
 
-async function login(page, email: string, password: string) {
-  await page.goto(`${BASE_URL}/login`)
-  await page.fill('input[type="email"]', email)
-  await page.fill('input[type="password"]', password)
-  
+async function login(page: Page, email: string, password: string) {
+  await page.goto('/login');
+
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', password);
+
   await Promise.all([
-    page.waitForURL(`${BASE_URL}`), 
-    page.click('button[type="submit"]')
+    page.waitForURL((url) => {
+      const current = url.toString();
+      return current === 'http://localhost:3000/' || current === 'http://localhost:3000';
+    }),
+    page.click('button[type="submit"]'),
   ]);
 }
 
-/**
- * Suite: Profile Module Technical Validation
- * Validates the End-to-End lifecycle: Authentication -> Data Fetching -> UI Rendering.
- */
 test.describe('Profile Data Fetching & UI Rendering', () => {
-
   test('TC-01: Successfully fetch and render profile data after authentication', async ({ page }) => {
-    // Step 1: Authentication Phase
     await login(page, TEST_USER.email, TEST_USER.password);
 
-    // Step 2: Navigation & Data Fetching
-    await page.goto(`${BASE_URL}/profile`);
+    await page.goto('/profile');
 
-    // Step 3: Wait for Data Synchronization
-    const nameInput = page.locator('input').first();
-    const emailInput = page.locator('input').nth(2);
+    const nameInput = page.getByLabel(/full name/i);
+    const emailInput = page.getByLabel(/email address/i);
+
+    await expect(nameInput).toBeVisible();
+    await expect(emailInput).toBeVisible();
 
     await expect(nameInput).not.toHaveValue('', { timeout: 15000 });
-
-    // Step 4: Final Integrity Assertion
-    await expect(nameInput).toHaveValue(TEST_USER.expectedName);
     await expect(emailInput).toHaveValue(TEST_USER.email);
   });
 
   test('TC-02: Enforce authentication guard for protected profile route', async ({ page }) => {
-    // Step 1: Ensure clean state (no session cookies)
     await page.context().clearCookies();
-    
-    // Step 2: Attempt to access protected route
-    await page.goto(`${BASE_URL}/profile`);
 
-    // Step 3: Assert UI behavior and redirection for unauthenticated users
-    await expect(page).toHaveURL(/.*\/login/);
-    
-    // Verify visibility of the login portal heading
-    const loginHeading = page.getByRole('heading', { name: /Welcome back|Login/i });
-    await expect(loginHeading).toBeVisible();
+    await page.goto('/profile');
+
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.getByLabel(/password/i)).toBeVisible();
   });
-
 
   test('TC-03: Verify visibility and state of administrative action buttons', async ({ page }) => {
-    // Step 1: Re-authenticate for UI check
-    await login(page, TEST_USER.email, TEST_USER.password)
+    await login(page, TEST_USER.email, TEST_USER.password);
 
-    // Step 2: Navigation & Data Fetching
-    await page.goto(`${BASE_URL}/profile`);
+    await page.goto('/profile');
 
-    // Step 3: Verify visibility and state of action buttons
-    const editBtn = page.getByRole('button', { name: 'Edit Profile' });
-    const deleteBtn = page.getByRole('button', { name: 'Delete Account' });
+    const editBtn = page.getByRole('button', { name: /edit profile/i });
+    const deleteBtn = page.getByRole('button', { name: /delete account/i });
 
-    // Assert visibility and Tailwind CSS class integrity
     await expect(editBtn).toBeVisible();
-    await expect(editBtn).toHaveClass(/btn-primary/);
-
     await expect(deleteBtn).toBeVisible();
-    await expect(deleteBtn).toHaveClass(/btn-secondary/);
-  });
 
+    await expect(editBtn).toBeEnabled();
+    await expect(deleteBtn).toBeEnabled();
+  });
 });

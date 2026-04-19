@@ -1,31 +1,42 @@
-'use client'
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+'use client';
+
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
-  const router = useRouter()
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!email || !password) { setError('Please fill in all fields.'); return }
+    e.preventDefault();
+    setError('');
 
-    setLoading(true)
-    const res = await signIn('credentials', { redirect: false, email, password })
-    setLoading(false)
+    if (!email || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
+    });
+
+    setLoading(false);
 
     if (res?.error) {
-      setError('Invalid email or password. Please try again.')
+      setError('Invalid email or password. Please try again.');
     } else {
-      router.push('/')
-      router.refresh()
+      router.push('/');
+      router.refresh();
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -36,9 +47,14 @@ export default function LoginForm() {
       )}
 
       <div>
-        <label className="form-label">Email</label>
+        <label htmlFor="email" className="form-label">
+          Email
+        </label>
         <input
+          id="email"
+          name="email"
           type="email"
+          required
           className="form-input"
           placeholder="user@example.com"
           value={email}
@@ -47,9 +63,14 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label className="form-label">Password</label>
+        <label htmlFor="password" className="form-label">
+          Password
+        </label>
         <input
+          id="password"
+          name="password"
           type="password"
+          required
           className="form-input"
           placeholder="Password"
           value={password}
@@ -65,5 +86,5 @@ export default function LoginForm() {
         {loading ? 'Logging in...' : 'Login'}
       </button>
     </form>
-  )
+  );
 }

@@ -7,14 +7,14 @@ import { useSession } from 'next-auth/react'
 import { apiFetch } from '@/libs/api'
 
 const initialForm = {
-  name: '',
-  picture: '',
-  address: '',
-  district: '',
-  province: '',
-  region: '',
-  tel: '',
-  postalcode: '',
+  name: 'Misty Pine Camp',
+  picture: 'https://drive.google.com/uc?export=view&id=1xkY68NCJoSxqOKRhhwGxQZddIeYt8SkN',
+  address: 'Ban Khun Klang',
+  district: 'Chom Thong',
+  province: 'Chiang Mai',
+  region: 'Northern',
+  tel: '0658745321',
+  postalcode: '70900',
 }
 
 export default function CreateCampgroundForm() {
