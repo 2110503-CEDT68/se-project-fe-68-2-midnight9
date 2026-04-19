@@ -7,14 +7,14 @@ import { useSession } from 'next-auth/react'
 import { apiFetch } from '@/libs/api'
 
 const initialForm = {
-  name: 'Misty Pine Camp',
-  picture: 'https://drive.google.com/uc?export=view&id=1xkY68NCJoSxqOKRhhwGxQZddIeYt8SkN',
-  address: 'Ban Khun Klang',
-  district: 'Chom Thong',
-  province: 'Chiang Mai',
-  region: 'Northern',
-  tel: '0658745321',
-  postalcode: '70900',
+  name: '',
+  picture: '',
+  address: '',
+  district: '',
+  province: '',
+  region: '',
+  tel: '',
+  postalcode: '',
 }
 
 export default function CreateCampgroundForm() {
@@ -37,12 +37,33 @@ export default function CreateCampgroundForm() {
     setError('')
     setSuccess('')
 
-    // ตรวจสอบว่ามีช่องไหนที่ยังไม่ได้กรอก หรือกรอกแค่เคาะสเปซบาร์ทิ้งไว้
-    const isFormIncomplete = Object.values(form).some((value) => value.trim() === '')
-    
+    const trimmedForm = {
+      name: form.name.trim(),
+      picture: form.picture.trim(),
+      address: form.address.trim(),
+      district: form.district.trim(),
+      province: form.province.trim(),
+      region: form.region.trim(),
+      tel: form.tel.trim(),
+      postalcode: form.postalcode.trim(),
+    }
+
+    const isFormIncomplete = Object.values(trimmedForm).some((value) => value === '')
     if (isFormIncomplete) {
       setError('Please fill in all fields.')
-      return // หยุดการทำงาน ไม่ส่งไป API และโชว์กรอบสีแดง
+      return
+    }
+
+    const thaiPhoneRegex = /^0\d{9}$/
+    if (!thaiPhoneRegex.test(trimmedForm.tel)) {
+      setError('Please enter a valid Thai phone number.')
+      return
+    }
+
+    const postalCodeRegex = /^\d{5}$/
+    if (!postalCodeRegex.test(trimmedForm.postalcode)) {
+      setError('Please enter a valid postal code.')
+      return
     }
 
     if (!session?.user?.token) {
@@ -58,7 +79,7 @@ export default function CreateCampgroundForm() {
         headers: {
           Authorization: `Bearer ${session.user.token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(trimmedForm),
       })
 
       console.log('create success:', data)
@@ -85,108 +106,119 @@ export default function CreateCampgroundForm() {
         Campground Details
       </h2>
 
-      {/* Error banner */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-5 text-sm text-red-700">
+        <div
+          className="bg-red-50 border border-red-200 rounded-md p-3 mb-5 text-sm text-red-700"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
-      {/* Success banner */}
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-5 text-sm text-green-700">
+        <div
+          className="bg-green-50 border border-green-200 rounded-md p-3 mb-5 text-sm text-green-700"
+          role="status"
+        >
           {success}
         </div>
       )}
 
-      {/* เอา mb-8 ออกจาก Grid เพื่อไม่ให้ขอบล่างกว้างเกินไป */}
       <div className="grid sm:grid-cols-2 gap-x-6 gap-y-5">
-        
-        {/* Name */}
         <div className="sm:col-span-2">
-          <label className="form-label">Campground Name</label>
-          <input 
-            className="form-input" 
-            value={form.name} 
-            onChange={update('name')} 
+          <label htmlFor="name" className="form-label">Campground Name</label>
+          <input
+            id="name"
+            name="name"
+            className="form-input"
+            value={form.name}
+            onChange={update('name')}
           />
         </div>
 
-        {/* Picture URL */}
         <div className="sm:col-span-2">
-          <label className="form-label">Picture URL</label>
-          <input 
+          <label htmlFor="picture" className="form-label">Picture URL</label>
+          <input
+            id="picture"
+            name="picture"
             type="url"
-            className="form-input" 
-            value={form.picture} 
-            onChange={update('picture')} 
+            className="form-input"
+            value={form.picture}
+            onChange={update('picture')}
             placeholder="https://"
           />
         </div>
 
-        {/* Address */}
         <div className="sm:col-span-2">
-          <label className="form-label">Address</label>
-          <input 
-            className="form-input" 
-            value={form.address} 
-            onChange={update('address')} 
+          <label htmlFor="address" className="form-label">Address</label>
+          <input
+            id="address"
+            name="address"
+            className="form-input"
+            value={form.address}
+            onChange={update('address')}
           />
         </div>
 
-        {/* District */}
         <div>
-          <label className="form-label">District</label>
-          <input 
-            className="form-input" 
-            value={form.district} 
-            onChange={update('district')} 
+          <label htmlFor="district" className="form-label">District</label>
+          <input
+            id="district"
+            name="district"
+            className="form-input"
+            value={form.district}
+            onChange={update('district')}
           />
         </div>
 
-        {/* Province */}
         <div>
-          <label className="form-label">Province</label>
-          <input 
-            className="form-input" 
-            value={form.province} 
-            onChange={update('province')} 
+          <label htmlFor="province" className="form-label">Province</label>
+          <input
+            id="province"
+            name="province"
+            className="form-input"
+            value={form.province}
+            onChange={update('province')}
           />
         </div>
 
-        {/* Region */}
         <div>
-          <label className="form-label">Region</label>
-          <input 
-            className="form-input" 
-            value={form.region} 
-            onChange={update('region')} 
+          <label htmlFor="region" className="form-label">Region</label>
+          <input
+            id="region"
+            name="region"
+            className="form-input"
+            value={form.region}
+            onChange={update('region')}
           />
         </div>
 
-        {/* Postal code */}
         <div>
-          <label className="form-label">Postal Code</label>
-          <input 
-            className="form-input" 
-            value={form.postalcode} 
-            onChange={update('postalcode')} 
+          <label htmlFor="postalcode" className="form-label">Postal Code</label>
+          <input
+            id="postalcode"
+            name="postalcode"
+            inputMode="numeric"
+            className="form-input"
+            value={form.postalcode}
+            onChange={update('postalcode')}
           />
         </div>
 
-        {/* Phone number */}
         <div>
-          <label className="form-label">Phone Number</label>
-          <input 
+          <label htmlFor="tel" className="form-label">Phone Number</label>
+          <input
+            id="tel"
+            name="tel"
             type="tel"
-            className="form-input" 
-            value={form.tel} 
-            onChange={update('tel')} 
-            placeholder="0X-XXX-XXX or 0XX-XXX-XXXX"
+            inputMode="tel"
+            className="form-input"
+            value={form.tel}
+            onChange={update('tel')}
+            placeholder="0812345678"
           />
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:items-end mt-2 sm:mt-0">
           <Link
             href="/campgrounds"
@@ -194,15 +226,14 @@ export default function CreateCampgroundForm() {
           >
             Cancel
           </Link>
-          <button 
-            type="submit" 
-            disabled={loading} 
+          <button
+            type="submit"
+            disabled={loading}
             className="btn-primary h-[42px] px-8 flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating...' : 'Create'}
           </button>
         </div>
-
       </div>
     </form>
   )
