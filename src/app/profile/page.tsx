@@ -33,7 +33,6 @@ export default function ProfilePage() {
     const loadProfile = async () => {
       try {
         const profileResponse = await getMe(session.user.token)
-        
         const userData = profileResponse.data 
 
         const formatDate = (dateString?: string) => {
@@ -50,7 +49,7 @@ export default function ProfilePage() {
           emergencyPhone: userData.emergencyPhone ?? '',
           medicalConditions: userData.medicalConditions ?? '',
           birthDate: formatDate(userData.birthDate), 
-          createdAt: formatDate(userData.createdAt), // ตอนนี้จะดึง 2026-04-19 มาแปลงเป็น 19/04/2026 ได้แล้ว!
+          createdAt: formatDate(userData.createdAt),
         })
       } catch (error) {
         console.error('Failed to fetch profile', error)
@@ -65,55 +64,52 @@ export default function ProfilePage() {
     <div className="min-h-screen py-10">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         
-        {/* Header Section */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
           <p className="text-gray-500 mt-1 text-sm">Manage your personal information and account settings.</p>
         </div>
 
-        {/* Profile Card */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-6 border-b border-gray-100 pb-3">
             Personal Information
           </h2>
 
-          {/* Grid Layout (Matches Booking Form) */}
           <div className="grid sm:grid-cols-2 gap-x-6 gap-y-5 mb-8">
             
-            {/* Name */}
             <div>
-              <label className="form-label">Full Name</label>
+              <label className="form-label" htmlFor="full-name">Full Name</label>
               <input 
+                id="full-name"
                 className="form-input bg-gray-50 text-gray-600" 
                 value={user.name || session?.user?.name || ''} 
                 disabled 
               />
             </div>
 
-            {/* Phone */}
             <div>
-              <label className="form-label">Phone Number</label>
+              <label className="form-label" htmlFor="phone-number">Phone Number</label>
               <input 
+                id="phone-number"
                 className="form-input bg-gray-50 text-gray-600" 
                 value={user.tel || session?.user?.tel || ''} 
                 disabled 
               />
             </div>
 
-            {/* Email */}
             <div>
-              <label className="form-label">Email Address</label>
+              <label className="form-label" htmlFor="email-address">Email Address</label>
               <input 
+                id="email-address"
                 className="form-input bg-gray-50 text-gray-600" 
                 value={user.email || session?.user?.email || ''} 
                 disabled 
               />
             </div>
 
-            {/* Birth Date */}
             <div>
-              <label className="form-label">Birth Date</label>
+              <label className="form-label" htmlFor="birth-date">Birth Date</label>
               <input 
+                id="birth-date"
                 className="form-input bg-gray-50 text-gray-600" 
                 value={user.birthDate || ''} 
                 disabled
@@ -121,10 +117,10 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Province */}
             <div>
-              <label className="form-label">Province</label>
+              <label className="form-label" htmlFor="province">Province</label>
               <input 
+                id="province"
                 className="form-input bg-gray-50 text-gray-600" 
                 value={user.province || ''} 
                 disabled 
@@ -132,10 +128,10 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Member Since (Read-only) */}
             <div>
-              <label className="form-label">Member Since</label>
+              <label className="form-label" htmlFor="member-since">Member Since</label>
               <input 
+                id="member-since"
                 className="form-input bg-gray-50 text-gray-600" 
                 value={user.createdAt || ''} 
                 disabled
@@ -143,17 +139,16 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* --- Divider แบ่งหมวดหมู่ --- */}
             <div className="sm:col-span-2 mt-4 mb-2">
               <h3 className="text-lg font-semibold text-gray-700 border-b border-gray-100 pb-2">
                 Emergency & Medical Information
               </h3>
             </div>
 
-            {/* Emergency Contact Name */}
             <div>
-              <label className="form-label">Emergency Contact Name</label>
+              <label className="form-label" htmlFor="emergency-name">Emergency Contact Name</label>
               <input 
+                id="emergency-name"
                 className="form-input bg-gray-50 text-gray-600" 
                 value={user.emergencyName || ''} 
                 disabled 
@@ -161,10 +156,10 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Emergency Contact Phone */}
             <div>
-              <label className="form-label">Emergency Contact Phone Number</label>
+              <label className="form-label" htmlFor="emergency-phone">Emergency Contact Phone Number</label>
               <input 
+                id="emergency-phone"
                 className="form-input bg-gray-50 text-gray-600" 
                 value={user.emergencyPhone || ''} 
                 disabled 
@@ -172,10 +167,10 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Medical Conditions / Allergies (กินพื้นที่เต็ม 2 คอลัมน์) */}
             <div className="sm:col-span-2">
-              <label className="form-label">Medical Conditions / Allergies</label>
+              <label className="form-label" htmlFor="medical-conditions">Medical Conditions / Allergies</label>
               <textarea
+                id="medical-conditions"
                 className="form-input bg-gray-50 text-gray-600 resize-none" 
                 value={user.medicalConditions || ''} 
                 disabled
@@ -185,18 +180,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3 mt-8">
-            <button
-              type="button"
-              className="btn-primary"
-            >
-              Edit Profile
-            </button>
-            <button
-              type="button"
-              className="btn-secondary !text-red-600 !border-red-200 hover:!bg-red-50 focus:!ring-red-500"
-            >
+            <button type="button" className="btn-primary">Edit Profile</button>
+            <button type="button" className="btn-secondary !text-red-600 !border-red-200 hover:!bg-red-50 focus:!ring-red-500">
               Delete Account
             </button>
           </div>

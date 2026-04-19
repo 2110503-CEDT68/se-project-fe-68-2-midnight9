@@ -26,21 +26,21 @@ test.describe('Profile Data Fetching & UI Rendering', () => {
 
   test('TC-01: Successfully fetch and render profile data after authentication', async ({ page }) => {
     // Step 1: Authentication Phase
-    await login(page, TEST_USER.email, TEST_USER.password)
+    await login(page, TEST_USER.email, TEST_USER.password);
 
     // Step 2: Navigation & Data Fetching
     await page.goto(`${BASE_URL}/profile`);
 
-    // Step 3: Verify Data Integrity in UI Rendering
-    const nameDisplay = page.locator('label:has-text("Full name") + div');
-    const emailDisplay = page.locator('label:has-text("Email") + div');
+    // Step 3: Wait for Data Synchronization
+    const nameInput = page.locator('input').first();
+    const emailInput = page.locator('input').nth(2);
 
-    // Assert that the default '—' placeholder is replaced by actual API data
-    await expect(nameDisplay).not.toHaveText('—', { timeout: 15000 });
-    await expect(nameDisplay).toContainText(TEST_USER.expectedName);
-    await expect(emailDisplay).toContainText(TEST_USER.email);
+    await expect(nameInput).not.toHaveValue('', { timeout: 15000 });
+
+    // Step 4: Final Integrity Assertion
+    await expect(nameInput).toHaveValue(TEST_USER.expectedName);
+    await expect(emailInput).toHaveValue(TEST_USER.email);
   });
-
 
   test('TC-02: Enforce authentication guard for protected profile route', async ({ page }) => {
     // Step 1: Ensure clean state (no session cookies)
@@ -66,15 +66,15 @@ test.describe('Profile Data Fetching & UI Rendering', () => {
     await page.goto(`${BASE_URL}/profile`);
 
     // Step 3: Verify visibility and state of action buttons
-    const editBtn = page.getByRole('button', { name: 'Edit' });
-    const deleteBtn = page.getByRole('button', { name: 'Delete' });
+    const editBtn = page.getByRole('button', { name: 'Edit Profile' });
+    const deleteBtn = page.getByRole('button', { name: 'Delete Account' });
 
     // Assert visibility and Tailwind CSS class integrity
     await expect(editBtn).toBeVisible();
-    await expect(editBtn).toHaveClass(/bg-slate-800/); 
+    await expect(editBtn).toHaveClass(/btn-primary/);
 
     await expect(deleteBtn).toBeVisible();
-    await expect(deleteBtn).toHaveClass(/text-red-600/);
+    await expect(deleteBtn).toHaveClass(/btn-secondary/);
   });
 
 });
