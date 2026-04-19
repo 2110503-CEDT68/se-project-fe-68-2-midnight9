@@ -6,17 +6,6 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { apiFetch } from '@/libs/api'
 
-// const initialForm = {
-//   name: 'Sunset Tent Camp',
-//   picture: 'https://drive.google.com/uc?export=view&id=1gCupMAwL4zGZV6JYyusz9FEeCR1CImNP',
-//   address: 'Ban Luang',
-//   district: 'Chom Thong',
-//   province: 'Chiang Mai',
-//   region: 'Northern',
-//   tel: '053286728',
-//   postalcode: '50160',
-// }
-
 const initialForm = {
   name: '',
   picture: '',
@@ -45,13 +34,16 @@ export default function CreateCampgroundForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    console.log('submit clicked')
-    console.log('form =', form)
-    console.log('session =', session)
-
     setError('')
     setSuccess('')
+
+    // ตรวจสอบว่ามีช่องไหนที่ยังไม่ได้กรอก หรือกรอกแค่เคาะสเปซบาร์ทิ้งไว้
+    const isFormIncomplete = Object.values(form).some((value) => value.trim() === '')
+    
+    if (isFormIncomplete) {
+      setError('Please fill in all fields.')
+      return // หยุดการทำงาน ไม่ส่งไป API และโชว์กรอบสีแดง
+    }
 
     if (!session?.user?.token) {
       setError('You must be logged in as admin.')
@@ -87,73 +79,130 @@ export default function CreateCampgroundForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white border border-gray-200 rounded-[40px] px-8 sm:px-20 py-10 sm:py-12"
+      className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mt-6"
     >
+      <h2 className="text-lg font-semibold text-gray-800 mb-6 border-b border-gray-100 pb-3">
+        Campground Details
+      </h2>
+
+      {/* Error banner */}
       {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+        <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-5 text-sm text-red-700">
           {error}
         </div>
       )}
 
+      {/* Success banner */}
       {success && (
-        <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+        <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-5 text-sm text-green-700">
           {success}
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-x-14 gap-y-5">
-        <div>
+      {/* เอา mb-8 ออกจาก Grid เพื่อไม่ให้ขอบล่างกว้างเกินไป */}
+      <div className="grid sm:grid-cols-2 gap-x-6 gap-y-5">
+        
+        {/* Name */}
+        <div className="sm:col-span-2">
           <label className="form-label">Campground Name</label>
-          <input className="form-input bg-gray-50" value={form.name} onChange={update('name')} />
+          <input 
+            className="form-input" 
+            value={form.name} 
+            onChange={update('name')} 
+          />
         </div>
 
-        <div>
+        {/* Picture URL */}
+        <div className="sm:col-span-2">
           <label className="form-label">Picture URL</label>
-          <input className="form-input bg-gray-50" value={form.picture} onChange={update('picture')} />
+          <input 
+            type="url"
+            className="form-input" 
+            value={form.picture} 
+            onChange={update('picture')} 
+            placeholder="https://"
+          />
         </div>
 
-        <div>
+        {/* Address */}
+        <div className="sm:col-span-2">
           <label className="form-label">Address</label>
-          <input className="form-input bg-gray-50" value={form.address} onChange={update('address')} />
+          <input 
+            className="form-input" 
+            value={form.address} 
+            onChange={update('address')} 
+          />
         </div>
 
+        {/* District */}
         <div>
           <label className="form-label">District</label>
-          <input className="form-input bg-gray-50" value={form.district} onChange={update('district')} />
+          <input 
+            className="form-input" 
+            value={form.district} 
+            onChange={update('district')} 
+          />
         </div>
 
+        {/* Province */}
         <div>
           <label className="form-label">Province</label>
-          <input className="form-input bg-gray-50" value={form.province} onChange={update('province')} />
+          <input 
+            className="form-input" 
+            value={form.province} 
+            onChange={update('province')} 
+          />
         </div>
 
+        {/* Region */}
         <div>
           <label className="form-label">Region</label>
-          <input className="form-input bg-gray-50" value={form.region} onChange={update('region')} />
+          <input 
+            className="form-input" 
+            value={form.region} 
+            onChange={update('region')} 
+          />
         </div>
 
+        {/* Postal code */}
         <div>
-          <label className="form-label">Phone number</label>
-          <input className="form-input bg-gray-50" value={form.tel} onChange={update('tel')} />
+          <label className="form-label">Postal Code</label>
+          <input 
+            className="form-input" 
+            value={form.postalcode} 
+            onChange={update('postalcode')} 
+          />
         </div>
 
+        {/* Phone number */}
         <div>
-          <label className="form-label">Postal code</label>
-          <input className="form-input bg-gray-50" value={form.postalcode} onChange={update('postalcode')} />
+          <label className="form-label">Phone Number</label>
+          <input 
+            type="tel"
+            className="form-input" 
+            value={form.tel} 
+            onChange={update('tel')} 
+            placeholder="0X-XXX-XXX or 0XX-XXX-XXXX"
+          />
         </div>
-      </div>
 
-      <div className="mt-8 flex flex-col sm:flex-row justify-end gap-4">
-        <button type="submit" disabled={loading} className="btn-primary px-8 disabled:opacity-50">
-          {loading ? 'Creating...' : 'Create'}
-        </button>
+        {/* Action Buttons */}
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:items-end mt-2 sm:mt-0">
+          <Link
+            href="/campgrounds"
+            className="btn-secondary h-[42px] px-6 flex items-center justify-center shrink-0"
+          >
+            Cancel
+          </Link>
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="btn-primary h-[42px] px-8 flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Creating...' : 'Create'}
+          </button>
+        </div>
 
-        <Link
-          href="/campgrounds"
-          className="btn-secondary bg-gray-200 border-gray-200 text-green-700 px-8 text-center"
-        >
-          Cancel
-        </Link>
       </div>
     </form>
   )

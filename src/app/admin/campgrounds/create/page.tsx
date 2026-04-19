@@ -10,7 +10,7 @@ export default async function CreateCampgroundPage() {
   if (session.user.role !== 'admin') redirect('/campgrounds')
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-gray-50">
+    <div className="min-h-[calc(100vh-3.5rem)]">
       <div className="max-w-5xl mx-auto px-4 py-12">
         <h1 className="page-title">Create Campground</h1>
         <p className="page-sub">Admin create new campground</p>

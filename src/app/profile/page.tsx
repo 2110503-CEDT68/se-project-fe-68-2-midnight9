@@ -9,6 +9,12 @@ type UserProfile = {
   name?: string
   email?: string
   tel?: string
+  province?: string
+  emergencyName?: string
+  emergencyPhone?: string
+  medicalConditions?: string
+  birthDate?: string
+  createdAt?: string
 }
 
 export default function ProfilePage() {
@@ -26,11 +32,25 @@ export default function ProfilePage() {
 
     const loadProfile = async () => {
       try {
-        const profile = await getMe(session.user.token)
+        const profileResponse = await getMe(session.user.token)
+        
+        const userData = profileResponse.data 
+
+        const formatDate = (dateString?: string) => {
+          if (!dateString) return ''
+          return new Date(dateString).toLocaleDateString('en-GB')
+        }
+
         setUser({
-          name: profile.name ?? '',
-          email: profile.email ?? '',
-          tel: profile.tel ?? '',
+          name: userData.name ?? '',
+          email: userData.email ?? '',
+          tel: userData.tel ?? '',
+          province: userData.province ?? '',
+          emergencyName: userData.emergencyName ?? '',
+          emergencyPhone: userData.emergencyPhone ?? '',
+          medicalConditions: userData.medicalConditions ?? '',
+          birthDate: formatDate(userData.birthDate), 
+          createdAt: formatDate(userData.createdAt), // ตอนนี้จะดึง 2026-04-19 มาแปลงเป็น 19/04/2026 ได้แล้ว!
         })
       } catch (error) {
         console.error('Failed to fetch profile', error)
@@ -41,84 +61,148 @@ export default function ProfilePage() {
     loadProfile()
   }, [router, session, status])
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-        <p className="text-sm text-slate-600">Loading profile…</p>
-      </div>
-    )
-  }
-
-  if (status === 'unauthenticated') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 py-12">
-        <p className="text-lg text-slate-700 mb-4">You must sign in to view your profile.</p>
-        <Link
-          href="/login"
-          className="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-        >
-          Go to sign in
-        </Link>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Account</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-900">My Profile</h1>
+    <div className="min-h-screen py-10">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        
+        {/* Header Section */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+          <p className="text-gray-500 mt-1 text-sm">Manage your personal information and account settings.</p>
         </div>
 
-        <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="mb-8 text-sm font-medium text-slate-600">Personal information</div>
+        {/* Profile Card */}
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-6 border-b border-gray-100 pb-3">
+            Personal Information
+          </h2>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">Full name</label>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-900">
-                {user.name || session?.user?.name || '—'}
-              </div>
+          {/* Grid Layout (Matches Booking Form) */}
+          <div className="grid sm:grid-cols-2 gap-x-6 gap-y-5 mb-8">
+            
+            {/* Name */}
+            <div>
+              <label className="form-label">Full Name</label>
+              <input 
+                className="form-input bg-gray-50 text-gray-600" 
+                value={user.name || session?.user?.name || ''} 
+                disabled 
+              />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">Phone number</label>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-900">
-                {user.tel || session?.user?.tel || '—'}
-              </div>
+            {/* Phone */}
+            <div>
+              <label className="form-label">Phone Number</label>
+              <input 
+                className="form-input bg-gray-50 text-gray-600" 
+                value={user.tel || session?.user?.tel || ''} 
+                disabled 
+              />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">Email</label>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-900">
-                {user.email || session?.user?.email || '—'}
-              </div>
+            {/* Email */}
+            <div>
+              <label className="form-label">Email Address</label>
+              <input 
+                className="form-input bg-gray-50 text-gray-600" 
+                value={user.email || session?.user?.email || ''} 
+                disabled 
+              />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">Birth date</label>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-900">31/04/07</div>
+            {/* Birth Date */}
+            <div>
+              <label className="form-label">Birth Date</label>
+              <input 
+                className="form-input bg-gray-50 text-gray-600" 
+                value={user.birthDate || ''} 
+                disabled
+                placeholder="dd/mm/yyyy"
+              />
+            </div>
+
+            {/* Province */}
+            <div>
+              <label className="form-label">Province</label>
+              <input 
+                className="form-input bg-gray-50 text-gray-600" 
+                value={user.province || ''} 
+                disabled 
+                placeholder="Your Province"
+              />
+            </div>
+
+            {/* Member Since (Read-only) */}
+            <div>
+              <label className="form-label">Member Since</label>
+              <input 
+                className="form-input bg-gray-50 text-gray-600" 
+                value={user.createdAt || ''} 
+                disabled
+                placeholder="dd/mm/yyyy"
+              />
+            </div>
+
+            {/* --- Divider แบ่งหมวดหมู่ --- */}
+            <div className="sm:col-span-2 mt-4 mb-2">
+              <h3 className="text-lg font-semibold text-gray-700 border-b border-gray-100 pb-2">
+                Emergency & Medical Information
+              </h3>
+            </div>
+
+            {/* Emergency Contact Name */}
+            <div>
+              <label className="form-label">Emergency Contact Name</label>
+              <input 
+                className="form-input bg-gray-50 text-gray-600" 
+                value={user.emergencyName || ''} 
+                disabled 
+                placeholder="Relative or Friend's Name"
+              />
+            </div>
+
+            {/* Emergency Contact Phone */}
+            <div>
+              <label className="form-label">Emergency Contact Phone Number</label>
+              <input 
+                className="form-input bg-gray-50 text-gray-600" 
+                value={user.emergencyPhone || ''} 
+                disabled 
+                placeholder="0XX-XXX-XXXX"
+              />
+            </div>
+
+            {/* Medical Conditions / Allergies (กินพื้นที่เต็ม 2 คอลัมน์) */}
+            <div className="sm:col-span-2">
+              <label className="form-label">Medical Conditions / Allergies</label>
+              <textarea
+                className="form-input bg-gray-50 text-gray-600 resize-none" 
+                value={user.medicalConditions || ''} 
+                disabled
+                rows={1}
+                placeholder="List any medical conditions or allergies..."
+              />
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-8">
             <button
               type="button"
-              className="inline-flex w-full items-center justify-center rounded-full bg-slate-800 px-8 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 sm:w-auto"
+              className="btn-primary"
             >
-              Edit
+              Edit Profile
             </button>
             <button
               type="button"
-              className="inline-flex w-full items-center justify-center rounded-full border border-red-500 bg-white px-8 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 sm:w-auto"
+              className="btn-secondary !text-red-600 !border-red-200 hover:!bg-red-50 focus:!ring-red-500"
             >
-              Delete
+              Delete Account
             </button>
           </div>
+
         </div>
       </div>
     </div>
   )
 }
-

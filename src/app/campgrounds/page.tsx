@@ -64,12 +64,29 @@ export default function CampgroundsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="page-title">Campgrounds</h1>
-      <p className="page-sub">
-        {session
-          ? 'Browse, search, and book your perfect campground.'
-          : 'Browse campgrounds. Log in to make a booking.'}
-      </p>
+      {/* ── Header Section & Create Button ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+        <div>
+          <h1 className="page-title !mb-1">Campgrounds</h1>
+          <p className="page-sub">
+            {session
+              ? 'Browse, search, and book your perfect campground.'
+              : 'Browse campgrounds. Log in to make a booking.'}
+          </p>
+        </div>
+
+        {isAdmin && (
+          <Link 
+            href="/admin/campgrounds/create" 
+            className="btn-primary inline-flex items-center text-sm px-6 py-2 shrink-0 mt-1 sm:mt-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 -ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Create New Campground
+          </Link>
+        )}
+      </div>
 
       {/* ── Search + Filter bar ── */}
       <div className="flex gap-2 max-w-xl mb-3">
@@ -188,14 +205,6 @@ export default function CampgroundsPage() {
           {filtered.map((c, i) => (
             <CampgroundCard key={c._id} camp={c} index={i}/>
           ))}
-        </div>
-      )}
-
-      {isAdmin && (
-        <div className="mt-8 flex justify-end">
-          <Link href="/admin/campgrounds/create" className="btn-primary text-xs px-8 py-2">
-            Create New Campground
-          </Link>
         </div>
       )}
 
