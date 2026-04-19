@@ -108,7 +108,7 @@ export default function CreateCampgroundForm() {
         </div>
 
         <div>
-          <label className="form-label">Link Photo</label>
+          <label className="form-label">Picture URL</label>
           <input className="form-input bg-gray-50" value={form.picture} onChange={update('picture')} />
         </div>
 
@@ -133,7 +133,7 @@ export default function CreateCampgroundForm() {
         </div>
 
         <div>
-          <label className="form-label">Phone</label>
+          <label className="form-label">Phone number</label>
           <input className="form-input bg-gray-50" value={form.tel} onChange={update('tel')} />
         </div>
 
