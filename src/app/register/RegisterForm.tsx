@@ -190,7 +190,51 @@ export default function RegisterForm() {
                 }
               }}
             >
-              <section><h2 className="font-semibold">1. Acceptance...</h2><p>...</p></section>
+               <section>
+                <h2 className="font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h2>
+                <p>By creating an account or using our service, you agree to be bound by these Terms of Service. If you do not agree, please do not use the service.</p>
+              </section>
+
+              <section>
+                <h2 className="font-semibold text-gray-900 mb-2">2. Use of the Service</h2>
+                <p className="mb-2">You agree to use the service only for lawful purposes and in accordance with these terms.</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Use the service for any illegal or unauthorized purpose</li>
+                  <li>Attempt to gain unauthorized access to the system</li>
+                  <li>Disrupt or interfere with the service or servers</li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="font-semibold text-gray-900 mb-2">3. User Accounts</h2>
+                <p>You are responsible for maintaining the confidentiality of your account and password. You agree to provide accurate and complete information when registering.</p>
+              </section>
+
+              <section>
+                <h2 className="font-semibold text-gray-900 mb-2">4. Privacy</h2>
+                <p>Your use of the service is also governed by our Privacy Policy.</p>
+              </section>
+
+              <section>
+                <h2 className="font-semibold text-gray-900 mb-2">5. Content and Data</h2>
+                <p>You retain ownership of any content you provide. However, you grant us a limited license to use, store, and process that content for operating the service.</p>
+              </section>
+              
+              <section>
+                <h2 className="font-semibold text-gray-900 mb-2">6. Service Availability</h2>
+                <p>We do not guarantee uninterrupted service and may modify or discontinue features at any time.</p>
+              </section>
+
+              <section>
+                <h2 className="font-semibold text-gray-900 mb-2">7. Limitation of Liability</h2>
+                <p>We are not liable for indirect or consequential damages arising from your use of the service.</p>
+              </section>
+
+              <section>
+                <h2 className="font-semibold text-gray-900 mb-2">8. Termination</h2>
+                <p>We may suspend or terminate your account if you violate these terms.</p>
+              </section>
+          
             </div>
 
             <div className="p-4 border-t flex justify-end gap-3 bg-gray-50">
