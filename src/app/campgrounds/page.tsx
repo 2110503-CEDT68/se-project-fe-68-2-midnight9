@@ -18,6 +18,8 @@ export default function CampgroundsPage() {
   const [showFilter, setShowFilter] = useState(false)
   const [filterRegion, setFilterRegion]     = useState('All')
   const [filterProvince, setFilterProvince] = useState('')
+  const [filterMinPrice, setFilterMinPrice] = useState('')
+  const [filterMaxPrice, setFilterMaxPrice] = useState('')
 
   useEffect(() => {
     getCampgrounds()
@@ -35,6 +37,8 @@ export default function CampgroundsPage() {
   // Apply search + filters
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
+    const minP = filterMinPrice !== '' ? Number(filterMinPrice) : null
+    const maxP = filterMaxPrice !== '' ? Number(filterMaxPrice) : null
     return campgrounds.filter((c) => {
       const matchSearch =
         !q ||
@@ -50,15 +54,21 @@ export default function CampgroundsPage() {
       const matchProvince =
         !filterProvince || filterProvince === 'All' || c.province === filterProvince
 
-      return matchSearch && matchRegion && matchProvince
-    })
-  }, [campgrounds, search, filterRegion, filterProvince])
+      const matchPrice =
+        (minP === null || c.price >= minP) &&
+        (maxP === null || c.price <= maxP)
 
-  const hasActiveFilter = filterRegion !== 'All' || filterProvince !== ''
+      return matchSearch && matchRegion && matchProvince && matchPrice
+    })
+  }, [campgrounds, search, filterRegion, filterProvince, filterMinPrice, filterMaxPrice])
+
+  const hasActiveFilter = filterRegion !== 'All' || filterProvince !== '' || filterMinPrice !== '' || filterMaxPrice !== ''
 
   const clearFilters = () => {
     setFilterRegion('All')
     setFilterProvince('')
+    setFilterMinPrice('')
+    setFilterMaxPrice('')
     setSearch('')
   }
 
@@ -145,6 +155,32 @@ export default function CampgroundsPage() {
                   <option key={p} value={p === 'All' ? '' : p}>{p}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Price Min */}
+            <div>
+              <label className="form-label">Min Price (฿ / night)</label>
+              <input
+                type="number"
+                min={0}
+                placeholder="e.g. 500"
+                className="form-input"
+                value={filterMinPrice}
+                onChange={(e) => setFilterMinPrice(e.target.value)}
+              />
+            </div>
+
+            {/* Price Max */}
+            <div>
+              <label className="form-label">Max Price (฿ / night)</label>
+              <input
+                type="number"
+                min={0}
+                placeholder="e.g. 2000"
+                className="form-input"
+                value={filterMaxPrice}
+                onChange={(e) => setFilterMaxPrice(e.target.value)}
+              />
             </div>
           </div>
 
