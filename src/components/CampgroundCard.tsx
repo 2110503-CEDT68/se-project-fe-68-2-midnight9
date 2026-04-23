@@ -18,7 +18,10 @@ export default function CampgroundCard({ camp }: { camp: any; index?: number }) 
           <p className="text-xs text-gray-500 mb-1">{camp.province}</p>
         )}
         {camp.address && (
-          <p className="text-xs text-gray-400 mb-3 line-clamp-1">{camp.address}</p>
+          <p className="text-xs text-gray-400 mb-2 line-clamp-1">{camp.address}</p>
+        )}
+        {camp.price !== undefined && (
+          <p className="text-xs font-semibold text-green-700 mb-3">฿{camp.price.toLocaleString()} / night</p>
         )}
         <Link
           href={`/campgrounds/${camp._id}`}

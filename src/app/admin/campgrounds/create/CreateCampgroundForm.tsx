@@ -8,6 +8,7 @@ import { apiFetch } from '@/libs/api'
 
 const initialForm = {
   name: '',
+  price: '',
   picture: '',
   address: '',
   district: '',
@@ -39,6 +40,7 @@ export default function CreateCampgroundForm() {
 
     const trimmedForm = {
       name: form.name.trim(),
+      price: form.price.trim(),
       picture: form.picture.trim(),
       address: form.address.trim(),
       district: form.district.trim(),
@@ -51,6 +53,12 @@ export default function CreateCampgroundForm() {
     const isFormIncomplete = Object.values(trimmedForm).some((value) => value === '')
     if (isFormIncomplete) {
       setError('Please fill in all fields.')
+      return
+    }
+
+    const priceValue = parseFloat(trimmedForm.price)
+    if (isNaN(priceValue) || priceValue < 0) {
+      setError('Please enter a valid price (0 or more).')
       return
     }
 
@@ -79,7 +87,7 @@ export default function CreateCampgroundForm() {
         headers: {
           Authorization: `Bearer ${session.user.token}`,
         },
-        body: JSON.stringify(trimmedForm),
+        body: JSON.stringify({ ...trimmedForm, price: parseFloat(trimmedForm.price) }),
       })
 
       console.log('create success:', data)
@@ -133,6 +141,22 @@ export default function CreateCampgroundForm() {
             className="form-input"
             value={form.name}
             onChange={update('name')}
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label htmlFor="price" className="form-label">Price per Night (฿)</label>
+          <input
+            id="price"
+            name="price"
+            type="number"
+            min="0"
+            step="1"
+            inputMode="numeric"
+            className="form-input"
+            value={form.price}
+            onChange={update('price')}
+            placeholder="e.g. 500"
           />
         </div>
 

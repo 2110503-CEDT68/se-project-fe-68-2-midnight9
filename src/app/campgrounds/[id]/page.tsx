@@ -35,6 +35,9 @@ export default async function CampgroundDetailPage({
           <h1 className="text-2xl font-bold text-gray-900 mb-3">{camp.name}</h1>
 
           <div className="space-y-1 mb-4 text-sm text-gray-600">
+            {camp.price !== undefined && (
+              <p className="text-base font-semibold text-green-700">฿{camp.price.toLocaleString()} / night</p>
+            )}
             {camp.address && <p>Address: {camp.address}</p>}
             {camp.district && <p>District: {camp.district}</p>}
             {camp.province && <p>Province: {camp.province}</p>}
