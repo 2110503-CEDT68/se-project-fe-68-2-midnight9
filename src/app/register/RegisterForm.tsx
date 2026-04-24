@@ -62,7 +62,7 @@ const PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: '2. Personal Data We Collect',
-    body: 'When you register and use our Service, we collect the following categories of personal data:\n\n  Data you provide directly:\n• Full Name — to identify you and personalise communications.\n• Email Address — used as your login identifier and for system notifications.\n• Phone Number — used for identity verification and emergency contact purposes.\n• Password — stored exclusively as a bcrypt hash (salt rounds: 10). We cannot view your plaintext password.\n• Date of Birth — used for age verification and to tailor your experience.\n\n  Data generated automatically:\n• Account creation timestamp (createdAt) — recorded when your account is first created.\n• Account role (user / admin) — assigned to manage access permissions.\n• Booking history — details of campground reservations you make through the platform.',
+    body: 'When you register and use our Service, we collect the following categories of personal data:\n\n  Data you provide directly via your Profile:\n• Personal Information — Full Name, Phone Number, Email Address, Birth Date, and Province.\n• Emergency & Medical Information — Emergency Contact Name, Emergency Contact Phone Number, and Medical Conditions / Allergies. This sensitive data is collected strictly to ensure your safety and accommodate your needs during your stay.\n• Password — stored exclusively as a bcrypt hash (salt rounds: 10). We cannot view your plaintext password.\n\n  Data generated automatically:\n• Member Since (Account creation timestamp) — recorded when your account is first created.\n• Account role (user / admin) — assigned to manage access permissions.\n• Booking history — details of campground reservations you make through the platform.',
   },
   {
     title: '3. Legal Basis for Processing (PDPA)',
@@ -70,11 +70,11 @@ const PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: '4. How We Use Your Data',
-    body: 'Your personal data is used to:\n• Create, authenticate, and manage your user account.\n• Process, confirm, and manage campground reservations.\n• Send transactional communications such as booking confirmations and account updates.\n• Provide customer support and resolve technical issues.\n• Detect, investigate, and prevent fraudulent or unauthorised activity.\n• Comply with legal and regulatory obligations.',
+    body: 'Your personal data is used to:\n• Create, authenticate, and manage your user account.\n• Process, confirm, and manage campground reservations.\n• Send transactional communications such as booking confirmations and account updates.\n• Ensure your safety during your campground visit (e.g., using emergency contacts or medical/allergy info only when necessary).\n• Provide customer support and resolve technical issues.\n• Detect, investigate, and prevent fraudulent or unauthorised activity.\n• Comply with legal and regulatory obligations.',
   },
   {
     title: '5. Data Sharing & Disclosure',
-    body: 'We do not sell your personal data. We may share your data only in the following limited circumstances:\n• Campground operators — only data necessary to fulfil your reservation (e.g., name and phone number).\n• Cloud infrastructure and database providers — under data processing agreements that require them to protect your data.\n• Law enforcement or government bodies — when required by a court order, subpoena, or applicable law.\n\nAll third parties who process your data on our behalf are contractually obligated to handle it in accordance with this Privacy Policy and applicable law.',
+    body: 'We do not sell your personal data. We may share your data only in the following limited circumstances:\n• Campground operators — only data necessary to fulfil your reservation (e.g., name, phone number, and necessary safety/allergy information).\n• Cloud infrastructure and database providers — under data processing agreements that require them to protect your data.\n• Law enforcement or government bodies — when required by a court order, subpoena, or applicable law.\n\nAll third parties who process your data on our behalf are contractually obligated to handle it in accordance with this Privacy Policy and applicable law.',
   },
   {
     title: '6. Data Security',
@@ -86,7 +86,7 @@ const PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: '8. Your Rights Under the PDPA',
-    body: 'As a data subject under Thai PDPA, you have the following rights:\n• Right of Access — request a copy of the personal data we hold about you.\n• Right to Rectification — correct inaccurate or incomplete data via your Profile page.\n• Right to Erasure — request deletion of your account and associated personal data.\n• Right to Data Portability — receive your data in a structured, machine-readable format.\n• Right to Restriction — request that we limit the processing of your data in certain circumstances.\n• Right to Object — object to processing based on legitimate interests.\n\nTo exercise any of these rights, please contact: privacy@midnight9.com',
+    body: 'As a data subject under Thai PDPA, you have the following rights:\n• Right of Access — request a copy of the personal data we hold about you.\n• Right to Rectification — correct inaccurate or incomplete data via your Profile page.\n• Right to Erasure — request deletion of your account and associated personal data.\n• Right to Data Portability — receive your data in a structured, machine-readable format.\n• Right to Restriction — request that we limit the processing of your data in certain circumstances.\n• Right to Object — object to processing based on legitimate interests.\n\nTo exercise any of these rights, please contact: privacy@midnight9campground.com',
   },
   {
     title: '9. Cookies',
@@ -94,7 +94,7 @@ const PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: '10. Contact & Data Protection Officer',
-    body: 'If you have questions, concerns, or complaints regarding this Privacy Policy or our data practices, please contact:\n\nData Protection Officer (DPO)\nEmail: privacy@midnight9.com\nMidnight9 Campground\nBangkok, Thailand',
+    body: 'If you have questions, concerns, or complaints regarding this Privacy Policy or our data practices, please contact:\n\nData Protection Officer (DPO)\nEmail: privacy@midnight9campground.com\nMidnight9 Campground\nBangkok, Thailand',
   },
 ]
 
@@ -102,25 +102,30 @@ const PRIVACY_SECTIONS: LegalSection[] = [
 
 function LegalModal({
   title,
-  badge,
   effectiveDate,
   sections,
   onClose,
   onAccept,
+  isAlreadyRead,
+  onReachBottom,
 }: {
   title: string
-  badge: string
   effectiveDate: string
   sections: LegalSection[]
   onClose: () => void
   onAccept?: () => void
+  isAlreadyRead?: boolean
+  onReachBottom?: () => void
 }) {
-  const [scrolledToBottom, setScrolledToBottom] = useState(false)
+  // รับค่า isAlreadyRead มาใช้เป็นค่าเริ่มต้น
+  const [scrolledToBottom, setScrolledToBottom] = useState(isAlreadyRead || false)
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget
-    if (el.scrollHeight - el.clientHeight - el.scrollTop <= 10) {
+    // ถ้าเลื่อนลงมาสุด ให้เรียก onReachBottom เพื่อจำสถานะว่าเคยอ่านจบแล้ว
+    if (!scrolledToBottom && el.scrollHeight - el.clientHeight - el.scrollTop <= 10) {
       setScrolledToBottom(true)
+      if (onReachBottom) onReachBottom()
     }
   }
 
@@ -131,11 +136,6 @@ function LegalModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-start justify-between bg-gray-50">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-block bg-green-100 text-green-800 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">
-                {badge}
-              </span>
-            </div>
             <h2 className="text-lg font-bold text-gray-900">{title}</h2>
             <p className="text-xs text-gray-400 mt-0.5">Effective date: {effectiveDate} · Midnight9 Campground</p>
           </div>
@@ -151,16 +151,6 @@ function LegalModal({
           </button>
         </div>
 
-        {/* Read-to-bottom notice */}
-        {onAccept && !scrolledToBottom && (
-          <div className="flex items-center gap-2 bg-amber-50 border-b border-amber-200 px-5 py-2 text-xs text-amber-700">
-            <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            Please scroll to the bottom to enable the Accept button.
-          </div>
-        )}
-
         {/* Body */}
         <div
           className="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-[13px] leading-relaxed text-gray-600"
@@ -172,9 +162,6 @@ function LegalModal({
               <p className="whitespace-pre-line">{s.body}</p>
             </section>
           ))}
-          <div className="pt-4 border-t border-gray-100 text-center text-xs text-gray-300 tracking-widest">
-            END OF DOCUMENT
-          </div>
         </div>
 
         {/* Footer */}
@@ -395,7 +382,7 @@ export default function RegisterForm() {
                 Terms of Service
               </button>
               {form.acceptTerms && (
-                <span className="ml-1.5 text-green-600 text-xs font-medium">✓ Accepted</span>
+                <span className="ml-1.5 text-green-600 text-xs font-medium"></span>
               )}
             </span>
           </label>
@@ -419,7 +406,7 @@ export default function RegisterForm() {
               </button>
               {' '}and consent to the collection and processing of my personal data.
               {form.acceptPrivacy && (
-                <span className="ml-1.5 text-green-600 text-xs font-medium">✓ Accepted</span>
+                <span className="ml-1.5 text-green-600 text-xs font-medium"></span>
               )}
             </span>
           </label>
@@ -438,9 +425,10 @@ export default function RegisterForm() {
       {showTerms && (
         <LegalModal
           title="Terms of Service"
-          badge="Legal"
           effectiveDate="23 April 2025"
           sections={TERMS_SECTIONS}
+          isAlreadyRead={hasReadTerms}
+          onReachBottom={() => setHasReadTerms(true)}
           onClose={() => setShowTerms(false)}
           onAccept={() => {
             setForm((f) => ({ ...f, acceptTerms: true }))
@@ -454,9 +442,10 @@ export default function RegisterForm() {
       {showPrivacy && (
         <LegalModal
           title="Privacy Policy"
-          badge="PDPA Compliant"
           effectiveDate="23 April 2025"
           sections={PRIVACY_SECTIONS}
+          isAlreadyRead={hasReadPrivacy}
+          onReachBottom={() => setHasReadPrivacy(true)}
           onClose={() => setShowPrivacy(false)}
           onAccept={() => {
             setForm((f) => ({ ...f, acceptPrivacy: true }))
