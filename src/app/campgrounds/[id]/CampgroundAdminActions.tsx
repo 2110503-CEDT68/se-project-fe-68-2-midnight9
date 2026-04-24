@@ -20,7 +20,7 @@ export default function CampgroundAdminActions({
 
   const handleDelete = async () => {
     const confirmed = window.confirm(
-      `Delete "${campgroundName}"?\n\nThis will also remove related bookings and cannot be undone.`
+      `Delete "${campgroundName}"?\n\nThis campground can only be deleted when it has no active or upcoming bookings.`
     )
 
     if (!confirmed) return
@@ -33,7 +33,9 @@ export default function CampgroundAdminActions({
       router.push('/campgrounds')
       router.refresh()
     } catch (err: any) {
-      setError(err.message || 'Failed to delete campground.')
+      const message = err.message || 'Failed to delete campground.'
+      setError(message)
+      window.alert(message)
       setIsDeleting(false)
     }
   }
@@ -56,7 +58,7 @@ export default function CampgroundAdminActions({
       </button>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:ml-1">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:ml-1" role="alert">
           {error}
         </div>
       )}
