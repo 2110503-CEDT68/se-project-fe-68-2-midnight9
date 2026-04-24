@@ -132,6 +132,20 @@ describe('ProfilePage', () => {
     expect(await screen.findByText(/profile updated successfully/i)).toBeInTheDocument()
   })
 
+  test('enters edit mode without submitting the form', async () => {
+    render(<ProfilePage />)
+
+    const nameInput = await screen.findByLabelText(/full name/i)
+    expect(nameInput).toBeDisabled()
+
+    await userEvent.click(screen.getByRole('button', { name: /edit profile/i }))
+
+    expect(nameInput).toBeEnabled()
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+    expect(mockedUpdateProfile).not.toHaveBeenCalled()
+  })
+
   test('requires password before deleting profile', async () => {
     mockedDeleteProfile.mockResolvedValue({ success: true, data: {} })
     mockedSignOut.mockResolvedValue(undefined as any)

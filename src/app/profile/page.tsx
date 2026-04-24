@@ -159,6 +159,11 @@ export default function ProfilePage() {
     setEditing(true)
   }
 
+  const handleStartEditing = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    startEditing()
+  }
+
   const cancelEditing = () => {
     setError('')
     setSuccess('')
@@ -168,6 +173,9 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!editing) return
+
     setError('')
     setSuccess('')
 
@@ -393,7 +401,7 @@ export default function ProfilePage() {
                   </button>
                 </>
               ) : (
-                <button type="button" className="btn-primary" onClick={startEditing}>
+                <button type="button" className="btn-primary" onClick={handleStartEditing}>
                   Edit Profile
                 </button>
               )}
