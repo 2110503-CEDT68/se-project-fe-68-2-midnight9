@@ -247,12 +247,6 @@ export default function ProfilePage() {
                 Account ID {session?.user?._id ? `...${session.user._id.slice(-6)}` : ''}
               </p>
             </div>
-
-            {!editing && (
-              <button type="button" className="btn-primary w-full sm:w-auto" onClick={startEditing}>
-                Edit Profile
-              </button>
-            )}
           </div>
 
           {error && (
@@ -387,7 +381,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex flex-col gap-3 sm:flex-row">
               {editing ? (
                 <>
@@ -398,7 +392,11 @@ export default function ProfilePage() {
                     Cancel
                   </button>
                 </>
-              ) : null}
+              ) : (
+                <button type="button" className="btn-primary" onClick={startEditing}>
+                  Edit Profile
+                </button>
+              )}
             </div>
 
             <button
