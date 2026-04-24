@@ -1,4 +1,7 @@
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5003/api/v1').replace(/\/$/, '')
+const publicApiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5003/api/v1'
+const internalApiUrl = process.env.INTERNAL_API_URL ?? publicApiUrl
+
+export const API_URL = (typeof window === 'undefined' ? internalApiUrl : publicApiUrl).replace(/\/$/, '')
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const { headers, ...restOptions } = options

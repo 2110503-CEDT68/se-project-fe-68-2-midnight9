@@ -1,7 +1,7 @@
 import { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 
-const API = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5003/api/v1').replace(/\/$/, '')
+const API = (process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5003/api/v1').replace(/\/$/, '')
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -74,4 +74,5 @@ export const authOptions: AuthOptions = {
     },
   },
   pages: { signIn: '/login' },
+  secret: process.env.NEXTAUTH_SECRET,
 }
