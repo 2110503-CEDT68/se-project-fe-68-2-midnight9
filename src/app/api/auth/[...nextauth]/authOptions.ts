@@ -58,8 +58,19 @@ export const authOptions: AuthOptions = {
   ],
   session: { strategy: 'jwt' },
   callbacks: {
-    async jwt({ token, user }) {
-      return user ? { ...token, ...user } : token
+    async jwt({ token, user, trigger, session }) {
+      if (user) return { ...token, ...user }
+
+      if (trigger === 'update' && session) {
+        return {
+          ...token,
+          name: typeof session.name === 'string' ? session.name : token.name,
+          email: typeof session.email === 'string' ? session.email : token.email,
+          tel: typeof session.tel === 'string' ? session.tel : token.tel,
+        }
+      }
+
+      return token
     },
     async session({ session, token }) {
       session.user = {

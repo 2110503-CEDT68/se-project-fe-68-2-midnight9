@@ -1,11 +1,22 @@
 import { apiFetch } from './api'
 
+type ApiFetchOptions = RequestInit & {
+  next?: { revalidate?: number }
+}
+
 export function getCampgrounds() {
   return apiFetch('/campgrounds', { next: { revalidate: 60 } })
 }
 
-export function getCampground(id: string) {
-  return apiFetch(`/campgrounds/${id}`, { cache: 'no-store' })
+export function getCampground(id: string, optionsOrToken?: ApiFetchOptions | string) {
+  if (typeof optionsOrToken === 'string') {
+    return apiFetch(`/campgrounds/${id}`, {
+      headers: { authorization: `Bearer ${optionsOrToken}` },
+      cache: 'no-store',
+    })
+  }
+
+  return apiFetch(`/campgrounds/${id}`, optionsOrToken ?? { next: { revalidate: 60 } })
 }
 
 export function updateCampground(id: string, body: object, token: string) {
@@ -65,5 +76,21 @@ export function getMe(token: string) {
   return apiFetch('/auth/me', {
     headers: { authorization: `Bearer ${token}` },
     cache: 'no-store',
+  })
+}
+
+export function updateProfile(body: object, token: string) {
+  return apiFetch('/auth/updatedetails', {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  })
+}
+
+export function deleteProfile(password: string, token: string) {
+  return apiFetch('/auth/me', {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify({ password }),
   })
 }
