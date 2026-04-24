@@ -22,6 +22,7 @@ async function login(page: Page, email: string, password: string) {
 
 async function fillCreateCampgroundForm(page: Page, name: string) {
   await page.getByLabel(/campground name/i).fill(name);
+  await page.getByLabel(/price per night/i).fill('1500');
   await page.getByLabel(/picture url/i).fill('https://test.com/camp.jpg');
   await page.getByLabel(/^address$/i).fill('99 Automated Test Street');
   await page.getByLabel(/district/i).fill('Pathum Wan');
@@ -58,6 +59,7 @@ test.describe('Campground Creation and Error Handling', () => {
     await expect(page).toHaveURL(/\/admin\/campgrounds\/create/);
 
     await expect(page.getByLabel(/campground name/i)).toBeVisible();
+    await expect(page.getByLabel(/price per night/i)).toBeVisible();
     await expect(page.getByLabel(/picture url/i)).toBeVisible();
     await expect(page.getByLabel(/^address$/i)).toBeVisible();
     await expect(page.getByLabel(/district/i)).toBeVisible();
@@ -86,6 +88,7 @@ test.describe('Campground Creation and Error Handling', () => {
     await page.goto('/admin/campgrounds/create');
 
     await page.getByLabel(/campground name/i).fill('Playwright Invalid Phone Camp');
+    await page.getByLabel(/price per night/i).fill('1500');
     await page.getByLabel(/picture url/i).fill('https://test.com/camp.jpg');
     await page.getByLabel(/^address$/i).fill('123 Test Road');
     await page.getByLabel(/district/i).fill('Test District');
@@ -107,7 +110,9 @@ test.describe('Campground Creation and Error Handling', () => {
 
     await page.goto('/admin/campgrounds/create');
 
+    let requestBody: any = null;
     await page.route('**/api/v1/campgrounds', async (route) => {
+      requestBody = route.request().postDataJSON();
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -116,6 +121,7 @@ test.describe('Campground Creation and Error Handling', () => {
           data: {
             _id: 'playwright-created-id',
             name: 'Playwright Campground',
+            price: 1500,
           },
         }),
       });
@@ -127,6 +133,7 @@ test.describe('Campground Creation and Error Handling', () => {
     await page.getByRole('button', { name: /^create$/i }).click();
 
     await expect(page.getByText(/campground created successfully/i)).toBeVisible();
+    expect(requestBody?.price).toBe(1500);
   });
 
   test('TC-07: backend error message is shown when server creation fails', async ({ page }) => {

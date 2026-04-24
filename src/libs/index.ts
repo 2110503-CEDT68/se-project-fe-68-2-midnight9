@@ -5,7 +5,22 @@ export function getCampgrounds() {
 }
 
 export function getCampground(id: string) {
-  return apiFetch(`/campgrounds/${id}`, { next: { revalidate: 60 } })
+  return apiFetch(`/campgrounds/${id}`, { cache: 'no-store' })
+}
+
+export function updateCampground(id: string, body: object, token: string) {
+  return apiFetch(`/campgrounds/${id}`, {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  })
+}
+
+export function deleteCampground(id: string, token: string) {
+  return apiFetch(`/campgrounds/${id}`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  })
 }
 
 export function getBookings(token: string) {
@@ -52,4 +67,3 @@ export function getMe(token: string) {
     cache: 'no-store',
   })
 }
-
