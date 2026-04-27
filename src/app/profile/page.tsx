@@ -251,9 +251,6 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-3 border-b border-gray-100 pb-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
-              <p className="text-xs text-gray-500 mt-1">
-                Account ID {session?.user?._id ? `...${session.user._id.slice(-6)}` : ''}
-              </p>
             </div>
           </div>
 
@@ -409,7 +406,7 @@ export default function ProfilePage() {
 
             <button
               type="button"
-              className="btn-secondary !text-red-600 !border-red-200 hover:!bg-red-50 focus:!ring-red-500"
+              className="btn-danger"
               onClick={() => {
                 setShowDeleteConfirm(true)
                 setDeletePassword('')
@@ -436,7 +433,7 @@ export default function ProfilePage() {
               Delete Profile
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              This will permanently delete your account and remove your campground bookings. Enter your password to continue.
+              This will permanently delete your account and remove your bookings. Enter your password to continue.
             </p>
 
             <label className="form-label mt-5" htmlFor="delete-password">

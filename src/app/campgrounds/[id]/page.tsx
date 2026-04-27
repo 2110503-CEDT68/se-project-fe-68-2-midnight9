@@ -36,17 +36,16 @@ export default async function CampgroundDetailPage({
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-4 border-b border-gray-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-green-600">
+                <p className="text-xs font-bold uppercase text-green-600">
                   Campground Details
                 </p>
                 <h1 className="mt-2 text-3xl font-bold text-gray-900">{camp.name}</h1>
                 <p className="mt-2 text-sm text-gray-500">
-                  A quick overview of location, contact details, and booking access.
+                  A quick overview of location and contact details.
                 </p>
               </div>
               {camp.price !== undefined && (
                 <div className="rounded-2xl bg-green-50 px-4 py-3 text-right">
-                  <p className="text-xs font-medium uppercase tracking-wide text-green-700">Starting Price</p>
                   <p className="mt-1 text-2xl font-bold text-green-800">
                     ฿{camp.price.toLocaleString()}
                   </p>
@@ -74,6 +73,12 @@ export default async function CampgroundDetailPage({
                   <p className="mt-1 text-sm text-gray-700">{camp.province}</p>
                 </div>
               )}
+              {camp.postalcode && (
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Postal Code</p>
+                  <p className="mt-1 text-sm text-gray-700">{camp.postalcode}</p>
+                </div>
+              )}
               {camp.region && (
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Region</p>
@@ -84,12 +89,6 @@ export default async function CampgroundDetailPage({
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Phone</p>
                   <p className="mt-1 text-sm text-gray-700">{camp.tel}</p>
-                </div>
-              )}
-              {camp.postalcode && (
-                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Postal Code</p>
-                  <p className="mt-1 text-sm text-gray-700">{camp.postalcode}</p>
                 </div>
               )}
             </div>

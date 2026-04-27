@@ -151,7 +151,7 @@ export default function CreateCampgroundForm() {
             name="price"
             type="number"
             min="0"
-            step="1"
+            step="50"
             inputMode="numeric"
             className="form-input"
             value={form.price}
