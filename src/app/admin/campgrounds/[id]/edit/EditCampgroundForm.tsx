@@ -59,6 +59,7 @@ export default function EditCampgroundForm({
   return (
     <form
       onSubmit={handleSubmit}
+      noValidate
       className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mt-6"
     >
       <h2 className="text-lg font-semibold text-gray-800 mb-6 border-b border-gray-100 pb-3">

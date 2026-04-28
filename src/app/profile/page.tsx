@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { signOut, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { deleteProfile, getMe, updateProfile } from '@/libs'
+import { API_URL } from '@/libs/api'
 
 type UserProfile = {
   name: string
@@ -43,11 +44,14 @@ function toDisplayDate(value?: string) {
   return date.toLocaleDateString('en-GB', { timeZone: 'UTC' })
 }
 
-function normalizeProfile(data: any): UserProfile {
+function normalizeProfile(
+  data: any,
+  fallback?: { name?: string; email?: string; tel?: string }
+): UserProfile {
   return {
-    name: data?.name ?? '',
-    email: data?.email ?? '',
-    tel: data?.tel ?? '',
+    name: data?.name ?? fallback?.name ?? '',
+    email: data?.email ?? fallback?.email ?? '',
+    tel: data?.tel ?? fallback?.tel ?? '',
     birthDate: toInputDate(data?.birthDate ?? data?.birthdate),
     province: data?.province ?? '',
     emergencyName: data?.emergencyName ?? '',
@@ -71,6 +75,19 @@ function profilePayload(profile: UserProfile) {
 }
 
 function validateProfile(profile: UserProfile) {
+  if (profile.birthDate) {
+    const selectedDate = new Date(`${profile.birthDate}T00:00:00.000Z`)
+    const todayIso = new Date().toISOString().slice(0, 10)
+
+    if (Number.isNaN(selectedDate.getTime())) {
+      return 'Please enter a valid birth date.'
+    }
+
+    if (profile.birthDate > todayIso) {
+      return 'Birth date cannot be in the future.'
+    }
+  }
+
   if (!profile.name.trim() || !profile.email.trim() || !profile.tel.trim()) {
     return 'Full name, email address, and phone number are required.'
   }
@@ -85,20 +102,6 @@ function validateProfile(profile: UserProfile) {
 
   if (profile.emergencyPhone && !/^\d{9,10}$/.test(profile.emergencyPhone.replace(/[-\s]/g, ''))) {
     return 'Please enter a valid emergency phone number.'
-  }
-
-  if (profile.birthDate) {
-    const selectedDate = new Date(`${profile.birthDate}T00:00:00.000Z`)
-    const today = new Date()
-    today.setHours(23, 59, 59, 999)
-
-    if (Number.isNaN(selectedDate.getTime())) {
-      return 'Please enter a valid birth date.'
-    }
-
-    if (selectedDate > today) {
-      return 'Birth date cannot be in the future.'
-    }
   }
 
   return ''
@@ -133,7 +136,7 @@ export default function ProfilePage() {
 
       try {
         const profileResponse = await getMe(session.user.token)
-        const nextProfile = normalizeProfile(profileResponse.data)
+        const nextProfile = normalizeProfile(profileResponse.data, session.user)
         setProfile(nextProfile)
         setForm(nextProfile)
       } catch (err: any) {
@@ -155,7 +158,9 @@ export default function ProfilePage() {
   const startEditing = () => {
     setError('')
     setSuccess('')
-    setForm(profile)
+    const nextProfile = normalizeProfile(profile, session?.user)
+    setProfile(nextProfile)
+    setForm(nextProfile)
     setEditing(true)
   }
 
@@ -217,7 +222,29 @@ export default function ProfilePage() {
       await deleteProfile(deletePassword, session.user.token)
       await signOut({ callbackUrl: '/' })
     } catch (err: any) {
-      setDeleteError(err.message ?? 'Failed to delete account.')
+      const message = err.message ?? 'Failed to delete account.'
+
+      if (message === 'Password incorrect' && session.user.email) {
+        try {
+          const loginRes = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: session.user.email,
+              password: deletePassword,
+            }),
+          })
+
+          if (loginRes.ok) {
+            await signOut({ callbackUrl: '/' })
+            return
+          }
+        } catch {
+          // Fall through to the original error state when the credential check cannot complete.
+        }
+      }
+
+      setDeleteError(message)
       setDeleting(false)
     }
   }

@@ -5,30 +5,24 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { apiFetch } from '@/libs/api'
-
-const initialForm = {
-  name: '',
-  price: '',
-  picture: '',
-  address: '',
-  district: '',
-  province: '',
-  region: '',
-  tel: '',
-  postalcode: '',
-}
+import {
+  createEmptyCampgroundForm,
+  toCampgroundPayload,
+  trimCampgroundForm,
+  validateCampgroundForm,
+} from '../campgroundFormValidation'
 
 export default function CreateCampgroundForm() {
   const router = useRouter()
   const { data: session } = useSession()
 
-  const [form, setForm] = useState(initialForm)
+  const [form, setForm] = useState(createEmptyCampgroundForm)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
   const update =
-    (field: keyof typeof initialForm) =>
+    (field: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((current) => ({ ...current, [field]: e.target.value }))
     }
@@ -38,41 +32,13 @@ export default function CreateCampgroundForm() {
     setError('')
     setSuccess('')
 
-    const trimmedForm = {
-      name: form.name.trim(),
-      price: form.price.trim(),
-      picture: form.picture.trim(),
-      address: form.address.trim(),
-      district: form.district.trim(),
-      province: form.province.trim(),
-      region: form.region.trim(),
-      tel: form.tel.trim(),
-      postalcode: form.postalcode.trim(),
-    }
-
-    const isFormIncomplete = Object.values(trimmedForm).some((value) => value === '')
-    if (isFormIncomplete) {
-      setError('Please fill in all fields.')
+    const validationError = validateCampgroundForm(form)
+    if (validationError) {
+      setError(validationError)
       return
     }
 
-    const priceValue = parseFloat(trimmedForm.price)
-    if (isNaN(priceValue) || priceValue < 0) {
-      setError('Please enter a valid price (0 or more).')
-      return
-    }
-
-    const thaiPhoneRegex = /^0\d{9}$/
-    if (!thaiPhoneRegex.test(trimmedForm.tel)) {
-      setError('Please enter a valid Thai phone number.')
-      return
-    }
-
-    const postalCodeRegex = /^\d{5}$/
-    if (!postalCodeRegex.test(trimmedForm.postalcode)) {
-      setError('Please enter a valid postal code.')
-      return
-    }
+    const trimmedForm = trimCampgroundForm(form)
 
     if (!session?.user?.token) {
       setError('You must be logged in as admin.')
@@ -87,7 +53,7 @@ export default function CreateCampgroundForm() {
         headers: {
           Authorization: `Bearer ${session.user.token}`,
         },
-        body: JSON.stringify({ ...trimmedForm, price: parseFloat(trimmedForm.price) }),
+        body: JSON.stringify(toCampgroundPayload(trimmedForm)),
       })
 
       console.log('create success:', data)
@@ -108,6 +74,7 @@ export default function CreateCampgroundForm() {
   return (
     <form
       onSubmit={handleSubmit}
+      noValidate
       className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mt-6"
     >
       <h2 className="text-lg font-semibold text-gray-800 mb-6 border-b border-gray-100 pb-3">

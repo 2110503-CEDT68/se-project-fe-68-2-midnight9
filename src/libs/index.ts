@@ -5,7 +5,7 @@ type ApiFetchOptions = RequestInit & {
 }
 
 export function getCampgrounds() {
-  return apiFetch('/campgrounds', { next: { revalidate: 60 } })
+  return apiFetch('/campgrounds?limit=200', { cache: 'no-store' })
 }
 
 export function getCampground(id: string, optionsOrToken?: ApiFetchOptions | string) {
@@ -91,6 +91,6 @@ export function deleteProfile(password: string, token: string) {
   return apiFetch('/auth/me', {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ password, currentPassword: password }),
   })
 }
