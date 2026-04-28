@@ -126,6 +126,7 @@ export default function ProfilePage() {
     if (status === 'loading') return
 
     if (!session?.user?.token) {
+      setLoading(false)
       router.push('/login')
       return
     }

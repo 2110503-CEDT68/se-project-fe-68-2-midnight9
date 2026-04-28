@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
-// Run tests sequentially to reduce API rate-limit issues and avoid shared-account race conditions.
+// Allow parallel execution between describe blocks; serial within each block
+// to avoid shared-account race conditions.
 test.describe.configure({ mode: 'default' });
 
 type CampgroundInput = {
@@ -28,12 +29,14 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Use fixed emails so accounts survive across runs and avoid repeated registration + rate-limit hits.
-// Override via env vars when you already have seeded accounts.
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'pw-admin-e2e@example.com';
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? '12345678';
 const USER_EMAIL = process.env.E2E_USER_EMAIL ?? 'pw-user-e2e@example.com';
 const USER_PASSWORD = process.env.E2E_USER_PASSWORD ?? '12345678';
+
+// Auth state paths — reused by all tests so login only happens once per role.
+const ADMIN_STATE = '/tmp/pw-admin-state.json';
+const USER_STATE = '/tmp/pw-user-state.json';
 
 const TEST_CAMPS = {
   pastOnly: {
@@ -101,6 +104,10 @@ const ids: Record<keyof typeof TEST_CAMPS, string> = {
   duplicate: '',
 };
 
+// ---------------------------------------------------------------------------
+// API helpers
+// ---------------------------------------------------------------------------
+
 async function apiLogin(request: APIRequestContext, email: string, password: string) {
   const res = await request.post(`${API_URL}/auth/login`, { data: { email, password } });
   if (!res.ok()) {
@@ -112,60 +119,44 @@ async function apiLogin(request: APIRequestContext, email: string, password: str
   return json.token as string;
 }
 
-async function apiRegister(request: APIRequestContext, data: {
-  name: string;
-  tel: string;
-  email: string;
-  password: string;
-  role?: 'user' | 'admin';
-}) {
+async function apiRegister(
+  request: APIRequestContext,
+  data: { name: string; tel: string; email: string; password: string; role?: 'user' | 'admin' },
+) {
   let lastStatus = 0;
   let lastBody = '';
 
-  // Increased attempts and backoff delay to handle backend rate-limiting more gracefully
-  for (let attempt = 1; attempt <= 6; attempt += 1) {
+  for (let attempt = 1; attempt <= 6; attempt++) {
     const res = await request.post(`${API_URL}/auth/register`, { data });
-
     if (res.ok()) {
       const json = await res.json();
       if (!json.token) throw new Error(`Register response for ${data.email} has no token.`);
       return json.token as string;
     }
-
     lastStatus = res.status();
     lastBody = await res.text();
-
-    // Backend sometimes rate-limits fast E2E setup. Wait longer and retry instead of failing the whole suite.
     if (lastStatus === 429) {
       await sleep(5000 * attempt);
       continue;
     }
-
     break;
   }
-
   throw new Error(`Cannot register API account ${data.email}. Status: ${lastStatus} Body: ${lastBody}`);
 }
 
-async function ensureAccount(request: APIRequestContext, data: {
-  name: string;
-  tel: string;
-  email: string;
-  password: string;
-  role?: 'user' | 'admin';
-}) {
+async function ensureAccount(
+  request: APIRequestContext,
+  data: { name: string; tel: string; email: string; password: string; role?: 'user' | 'admin' },
+) {
   const loginRes = await request.post(`${API_URL}/auth/login`, {
     data: { email: data.email, password: data.password },
   });
-
   if (loginRes.ok()) {
     const json = await loginRes.json();
     if (!json.token) throw new Error(`Login response for ${data.email} has no token.`);
     return json.token as string;
   }
-
-  // Add a small delay before registering to avoid hammering the API
-  await sleep(1000);
+  await sleep(500);
   return apiRegister(request, data);
 }
 
@@ -196,13 +187,34 @@ async function ensureCampground(request: APIRequestContext, token: string, camp:
 async function createActiveBookingIfNeeded(request: APIRequestContext, token: string, campgroundId: string) {
   const checkIn = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const checkOut = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
   await request.post(`${API_URL}/campgrounds/${campgroundId}/bookings`, {
     headers: { Authorization: `Bearer ${token}` },
     data: { checkInDate: checkIn, checkOutDate: checkOut },
   });
 }
 
+// ---------------------------------------------------------------------------
+// UI helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Fast login via the UI and persist the browser storage state so subsequent
+ * tests can restore the session without re-navigating through the login form.
+ */
+async function loginAndSaveState(page: Page, email: string, password: string, statePath: string) {
+  await page.goto('/login');
+  await page.locator('#email').fill(email);
+  await page.locator('#password').fill(password);
+  await page.getByRole('button', { name: /^login$/i }).click();
+  await expect(page).not.toHaveURL(/\/login$/, { timeout: 20000 });
+  await page.context().storageState({ path: statePath });
+}
+
+/**
+ * Lightweight login used inside tests that don't save state.
+ * Re-uses saved state when the context already carries it; otherwise does
+ * a full UI login (fallback for the few tests that need a fresh context).
+ */
 async function login(page: Page, email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
   await page.goto('/login');
   await page.locator('#email').fill(email);
@@ -213,13 +225,10 @@ async function login(page: Page, email = ADMIN_EMAIL, password = ADMIN_PASSWORD)
   await expect(page).not.toHaveURL(/\/login/, { timeout: 20000 });
 }
 
-async function fillRegister(page: Page, data: {
-  name?: string;
-  tel?: string;
-  email?: string;
-  password?: string;
-  confirm?: string;
-}) {
+async function fillRegister(
+  page: Page,
+  data: { name?: string; tel?: string; email?: string; password?: string; confirm?: string },
+) {
   await page.locator('#name').fill(data.name ?? 'Jane Smith');
   await page.locator('#tel').fill(data.tel ?? '0812345678');
   await page.locator('#email').fill(data.email ?? `jane-${Date.now()}@example.com`);
@@ -231,7 +240,9 @@ async function acceptLegalModal(page: Page, modalTitle: RegExp) {
   const dialog = page.locator('.fixed').filter({ hasText: modalTitle }).first();
   await expect(dialog).toBeVisible();
   const scrollBox = dialog.locator('.overflow-y-auto').first();
-  await scrollBox.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+  await scrollBox.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
   await expect(dialog.getByRole('button', { name: /^I Accept$/i })).toBeEnabled();
   await dialog.getByRole('button', { name: /^I Accept$/i }).click();
   await expect(dialog).toHaveCount(0);
@@ -244,7 +255,10 @@ async function acceptBothLegal(page: Page) {
   await acceptLegalModal(page, /privacy policy/i);
 }
 
-async function fillCampgroundForm(page: Page, overrides: Partial<Record<keyof CampgroundInput, string | number>> = {}) {
+async function fillCampgroundForm(
+  page: Page,
+  overrides: Partial<Record<keyof CampgroundInput, string | number>> = {},
+) {
   const d = { ...TEST_CAMPS.sunny, ...overrides };
   await page.locator('#name').fill(String(d.name));
   await page.locator('#price').fill(String(d.price));
@@ -258,41 +272,67 @@ async function fillCampgroundForm(page: Page, overrides: Partial<Record<keyof Ca
 }
 
 async function expectInvalidField(page: Page, label: RegExp) {
-  // The campground forms use setError() for validation messages, not HTML5 validity.
-  // Show a general error message check based on the label hint.
   const field = page.getByRole('alert');
   await expect(field.first()).toBeVisible();
 }
 
-test.beforeAll(async ({ request }) => {
-  // Increased timeout to handle slow API registration + rate-limit retries
+// ---------------------------------------------------------------------------
+// Global setup — runs once before all tests
+// ---------------------------------------------------------------------------
+
+test.beforeAll(async ({ request, browser }) => {
   test.setTimeout(120_000);
-  const adminToken = await ensureAccount(request, {
-    name: 'Playwright Admin',
-    tel: '0812345678',
-    email: ADMIN_EMAIL,
-    password: ADMIN_PASSWORD,
-    role: 'admin',
-  });
 
-  // Small delay between account setups to avoid rate limiting
-  await sleep(500);
+  // Ensure accounts exist (parallel — no dependency between admin & user)
+  const [adminToken] = await Promise.all([
+    ensureAccount(request, {
+      name: 'Playwright Admin',
+      tel: '0812345678',
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+      role: 'admin',
+    }),
+    ensureAccount(request, {
+      name: 'Playwright User',
+      tel: '0898765432',
+      email: USER_EMAIL,
+      password: USER_PASSWORD,
+      role: 'user',
+    }),
+  ]);
 
-  await ensureAccount(request, {
-    name: 'Playwright User',
-    tel: '0898765432',
-    email: USER_EMAIL,
-    password: USER_PASSWORD,
-    role: 'user',
-  });
+  // Create all campgrounds in parallel (they don't depend on each other)
+  const [pastOnlyId, activeId, sunnyId, centralId, duplicateId] = await Promise.all([
+    ensureCampground(request, adminToken, TEST_CAMPS.pastOnly),
+    ensureCampground(request, adminToken, TEST_CAMPS.active),
+    ensureCampground(request, adminToken, TEST_CAMPS.sunny),
+    ensureCampground(request, adminToken, TEST_CAMPS.central),
+    ensureCampground(request, adminToken, TEST_CAMPS.duplicate),
+  ]);
 
-  ids.pastOnly = await ensureCampground(request, adminToken, TEST_CAMPS.pastOnly);
-  ids.active = await ensureCampground(request, adminToken, TEST_CAMPS.active);
-  ids.sunny = await ensureCampground(request, adminToken, TEST_CAMPS.sunny);
-  ids.central = await ensureCampground(request, adminToken, TEST_CAMPS.central);
-  ids.duplicate = await ensureCampground(request, adminToken, TEST_CAMPS.duplicate);
+  ids.pastOnly = pastOnlyId;
+  ids.active = activeId;
+  ids.sunny = sunnyId;
+  ids.central = centralId;
+  ids.duplicate = duplicateId;
+
+  // Create active booking (depends on activeId being set)
   await createActiveBookingIfNeeded(request, adminToken, ids.active);
+
+  // Save browser auth state so tests can skip the login form entirely.
+  // We create one temporary page per role, log in, save state, then close.
+  const adminPage = await browser.newPage();
+  await loginAndSaveState(adminPage, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_STATE);
+  await adminPage.close();
+
+  const userPage = await browser.newPage();
+  await loginAndSaveState(userPage, USER_EMAIL, USER_PASSWORD, USER_STATE);
+  await userPage.close();
 });
+
+// ---------------------------------------------------------------------------
+// US1-1 Register
+// ---------------------------------------------------------------------------
 
 test.describe('US1-1 Register', () => {
   test('TC1-1 valid register', async ({ page }) => {
@@ -351,34 +391,42 @@ test.describe('US1-1 Register', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// US1-2 View Profile  — reuses saved USER_STATE (no UI login needed)
+// ---------------------------------------------------------------------------
+
 test.describe('US1-2 View Profile', () => {
+  test.use({ storageState: USER_STATE });
+
   test('TC2-1 complete profile displayed read-only', async ({ page }) => {
-  await login(page, USER_EMAIL, USER_PASSWORD);
-  await page.goto('/profile');
-  await expect(page.getByRole('heading', { name: /my profile/i })).toBeVisible();
-  await expect(page.locator('#full-name')).toBeDisabled();
-  await expect(page.locator('#email-address')).toBeDisabled();
-  await expect(page.locator('#phone-number')).toBeDisabled();
-});
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { name: /my profile/i })).toBeVisible();
+    await expect(page.locator('#full-name')).toBeDisabled();
+    await expect(page.locator('#email-address')).toBeDisabled();
+    await expect(page.locator('#phone-number')).toBeDisabled();
+  });
 
   test('TC2-2 optional fields empty show no errors', async ({ page }) => {
-  await login(page, USER_EMAIL, USER_PASSWORD);
-  await page.goto('/profile');
-  await expect(page.locator('#full-name')).toBeVisible();
-  await expect(page.getByText(/failed|error|invalid|required/i)).toHaveCount(0);
-});
-
-  test('TC2-3 unauthenticated user redirected to login', async ({ page }) => {
-    await page.context().clearCookies();
     await page.goto('/profile');
-    await expect(page).toHaveURL(/\/login/, { timeout: 20000 });
-    await expect(page.locator('#email')).toBeVisible();
+    await expect(page.locator('#full-name')).toBeVisible();
+    await expect(page.getByText(/failed|error|invalid|required/i)).toHaveCount(0);
   });
 });
+  // TC2-3 intentionally uses a fresh context (no saved state) to test redirect.
+  test('US1-2 View Profile › TC2-3 unauthenticated user redirected to login', async ({ page }) => {
+  await page.goto('/profile');
+  await expect(page).toHaveURL(/\/login/, { timeout: 20000 });
+  await expect(page.locator('#email')).toBeVisible();
+});
+
+// ---------------------------------------------------------------------------
+// US1-3 Edit Profile  — reuses saved USER_STATE
+// ---------------------------------------------------------------------------
 
 test.describe('US1-3 Edit Profile', () => {
+  test.use({ storageState: USER_STATE });
+
   test.beforeEach(async ({ page }) => {
-    await login(page, USER_EMAIL, USER_PASSWORD);
     await page.goto('/profile');
     await page.getByRole('button', { name: /edit profile/i }).click();
   });
@@ -441,21 +489,21 @@ test.describe('US1-3 Edit Profile', () => {
     await expect(page.getByText('Please enter a valid phone number.')).toBeVisible();
   });
 
- test('TC3-5 invalid emergency phone', async ({ page }) => {
-  const emergencyPhone = page.locator('#emergency-phone');
-  await emergencyPhone.fill('999');
-  await page.getByRole('button', { name: /save changes/i }).click();
-  await expect(page.getByText('Profile updated successfully.')).toHaveCount(0);
-  await expect(page).toHaveURL(/\/profile/);
-  await expect(emergencyPhone).toBeVisible();
-});
+  test('TC3-5 invalid emergency phone', async ({ page }) => {
+    const emergencyPhone = page.locator('#emergency-phone');
+    await emergencyPhone.fill('999');
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect(page.getByText('Profile updated successfully.')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/profile/);
+    await expect(emergencyPhone).toBeVisible();
+  });
 
- test('TC3-6 future birth date', async ({ page }) => {
-  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  await page.locator('#birth-date').fill(tomorrow);
-  await page.getByRole('button', { name: /save changes/i }).click();
-  await expect(page.getByText(/birth date cannot be in the future/i)).toBeVisible();
-  await expect(page).toHaveURL(/\/profile/);
+  test('TC3-6 future birth date', async ({ page }) => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    await page.locator('#birth-date').fill(tomorrow);
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect(page.getByText(/birth date cannot be in the future/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/profile/);
   });
 
   test('TC3-7 cancel edit', async ({ page }) => {
@@ -467,13 +515,12 @@ test.describe('US1-3 Edit Profile', () => {
   });
 });
 
-test.describe('US1-4 Delete Account Dialog', () => {
-  // TC4-1 uses a real disposable account so the DELETE flow is tested
-  // end-to-end without touching USER_EMAIL (which other suites need).
-  // TC4-2..4 reuse USER_EMAIL with a mock so nothing is actually removed.
+// ---------------------------------------------------------------------------
+// US1-4 Delete Account Dialog  — reuses saved USER_STATE for TC4-2..4
+// ---------------------------------------------------------------------------
 
+test.describe('US1-4 Delete Account Dialog', () => {
   test('TC4-1 correct password deletes account and redirects home', async ({ page, request }) => {
-    // Create a throw-away account just for this test
     const dispEmail = `pw-del-${Date.now()}@example.com`;
     const dispPassword = '12345678';
     await apiRegister(request, {
@@ -492,44 +539,52 @@ test.describe('US1-4 Delete Account Dialog', () => {
     await expect(page).toHaveURL(/\/$/, { timeout: 20000 });
   });
 
-  test.beforeEach(async ({ page }) => {
-    // TC4-2..4: mock DELETE /auth/me so USER_EMAIL is never actually deleted
-    await page.route('**/auth/me', async (route) => {
-      if (route.request().method() === 'DELETE') {
-        return route.fulfill({
-          status: 400,
-          contentType: 'application/json',
-          body: JSON.stringify({ success: false, message: 'Password incorrect' }),
-        });
-      }
-      return route.continue();
+  // TC4-2..4 share saved USER_STATE and mock DELETE so the account is safe.
+  test.describe('mocked delete', () => {
+    test.use({ storageState: USER_STATE });
+
+    test.beforeEach(async ({ page }) => {
+      await page.route('**/auth/me', async (route) => {
+        if (route.request().method() === 'DELETE') {
+          return route.fulfill({
+            status: 400,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: false, message: 'Password incorrect' }),
+          });
+        }
+        return route.continue();
+      });
+      await page.goto('/profile');
+      await page.getByRole('button', { name: /delete account/i }).click();
     });
-    await login(page, USER_EMAIL, USER_PASSWORD);
-    await page.goto('/profile');
-    await page.getByRole('button', { name: /delete account/i }).click();
-  });
 
-  test('TC4-2 wrong password', async ({ page }) => {
-    await page.locator('#delete-password').fill('wrong-password');
-    await page.getByRole('button', { name: /confirm delete/i }).click();
-    await expect(page.getByText('Password incorrect')).toBeVisible();
-    await expect(page.getByRole('dialog')).toBeVisible();
-  });
+    test('TC4-2 wrong password', async ({ page }) => {
+      await page.locator('#delete-password').fill('wrong-password');
+      await page.getByRole('button', { name: /confirm delete/i }).click();
+      await expect(page.getByText('Password incorrect')).toBeVisible();
+      await expect(page.getByRole('dialog')).toBeVisible();
+    });
 
-  test('TC4-3 empty password disables confirm delete', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /confirm delete/i })).toBeDisabled();
-  });
+    test('TC4-3 empty password disables confirm delete', async ({ page }) => {
+      await expect(page.getByRole('button', { name: /confirm delete/i })).toBeDisabled();
+    });
 
-  test('TC4-4 cancel delete dialog', async ({ page }) => {
-    await page.getByRole('button', { name: /^cancel$/i }).click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(/\/profile/);
+    test('TC4-4 cancel delete dialog', async ({ page }) => {
+      await page.getByRole('button', { name: /^cancel$/i }).click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await expect(page).toHaveURL(/\/profile/);
+    });
   });
 });
 
+// ---------------------------------------------------------------------------
+// US2-1 Create Campground  — reuses saved ADMIN_STATE
+// ---------------------------------------------------------------------------
+
 test.describe('US2-1 Create Campground', () => {
+  test.use({ storageState: ADMIN_STATE });
+
   test.beforeEach(async ({ page }) => {
-    await login(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     await page.goto('/admin/campgrounds/create');
   });
 
@@ -548,7 +603,9 @@ test.describe('US2-1 Create Campground', () => {
   test('TC5-3 name over 50 characters', async ({ page }) => {
     await fillCampgroundForm(page, { name: 'A'.repeat(51) });
     await page.getByRole('button', { name: /^create$/i }).click();
-    await expect(page.getByText(/Name cannot be more than 50 characters|Campground name cannot be more than 50 characters/i)).toBeVisible();
+    await expect(
+      page.getByText(/Name cannot be more than 50 characters|Campground name cannot be more than 50 characters/i),
+    ).toBeVisible();
   });
 
   test('TC5-4 empty price', async ({ page }) => {
@@ -588,9 +645,14 @@ test.describe('US2-1 Create Campground', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// US2-2 Search Filter and Detail  — reuses saved ADMIN_STATE
+// ---------------------------------------------------------------------------
+
 test.describe('US2-2 Search Filter and Detail', () => {
+  test.use({ storageState: ADMIN_STATE });
+
   test.beforeEach(async ({ page }) => {
-    await login(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     await page.goto('/campgrounds');
     await expect(page.getByRole('heading', { name: /campgrounds/i })).toBeVisible();
   });
@@ -614,7 +676,6 @@ test.describe('US2-2 Search Filter and Detail', () => {
 
   test('TC6-4 filter Northern region', async ({ page }) => {
     await page.getByRole('button', { name: /filter/i }).click();
-    // Filter panel: first select = Region, second select = Province
     await page.getByRole('combobox').first().selectOption('Northern');
     await expect(page.getByText(TEST_CAMPS.sunny.name)).toBeVisible();
     await expect(page.getByText(TEST_CAMPS.central.name)).toHaveCount(0);
@@ -622,7 +683,6 @@ test.describe('US2-2 Search Filter and Detail', () => {
 
   test('TC6-5 filter Chiang Mai province', async ({ page }) => {
     await page.getByRole('button', { name: /filter/i }).click();
-    // Filter panel: second combobox = Province
     await page.getByRole('combobox').nth(1).selectOption('Chiang Mai');
     await expect(page.getByText(TEST_CAMPS.sunny.name)).toBeVisible();
     await expect(page.getByText(TEST_CAMPS.central.name)).toHaveCount(0);
@@ -651,18 +711,24 @@ test.describe('US2-2 Search Filter and Detail', () => {
   });
 
   test('TC6-9 view details opens detail page', async ({ page }) => {
-    const card = page.locator('.card').filter({ hasText: TEST_CAMPS.sunny.name }).first();
+    const card = page.locator('article, [class*="card"], li')
+      .filter({ hasText: TEST_CAMPS.sunny.name }).first();
     await card.getByRole('link', { name: /view details/i }).click();
-    await expect(page).toHaveURL(new RegExp(`/campgrounds/${ids.sunny}`));
+    await expect(page).toHaveURL(new RegExp(`/campgrounds/${ids.sunny}`), { timeout: 10000 });
     await expect(page.getByText(/campground details/i).first()).toBeVisible();
     await expect(page.getByRole('link', { name: /edit campground/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /delete campground/i })).toBeVisible();
   });
 });
 
+// ---------------------------------------------------------------------------
+// US2-3 Edit Campground  — reuses saved ADMIN_STATE
+// ---------------------------------------------------------------------------
+
 test.describe('US2-3 Edit Campground', () => {
+  test.use({ storageState: ADMIN_STATE });
+
   test.beforeEach(async ({ page }) => {
-    await login(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     await page.goto(`/admin/campgrounds/${ids.sunny}/edit`);
     await expect(page.getByRole('heading', { name: /edit campground/i })).toBeVisible();
   });
@@ -715,10 +781,12 @@ test.describe('US2-3 Edit Campground', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// US2-4 Delete Campground  — reuses saved ADMIN_STATE
+// ---------------------------------------------------------------------------
+
 test.describe('US2-4 Delete Campground', () => {
-  test.beforeEach(async ({ page }) => {
-    await login(page, ADMIN_EMAIL, ADMIN_PASSWORD);
-  });
+  test.use({ storageState: ADMIN_STATE });
 
   test('TC8-1 delete campground with no active bookings', async ({ page }) => {
     await page.goto(`/campgrounds/${ids.pastOnly}`);

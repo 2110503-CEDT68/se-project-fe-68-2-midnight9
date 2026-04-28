@@ -14,45 +14,36 @@ process.env.E2E_USER_EMAIL = process.env.E2E_USER_EMAIL ?? `pw-user-${e2eRunId}@
 process.env.E2E_USER_PASSWORD = process.env.E2E_USER_PASSWORD ?? '12345678';
 
 export default defineConfig({
-  testDir: './public/tests', 
+  testDir: './public/tests',
   testMatch: /.*\.spec\.ts/,
 
-  /* Run tests in files in parallel */
   fullyParallel: false,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
   workers: 1,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
 
-  /* Shared settings for all the projects below. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: `http://127.0.0.1:${frontendPort}`,
-    /* Collect trace when retrying the failed test. */
     trace: 'on-first-retry',
-    /* Show browser during test (set to true if you want to run invisible) */
     headless: true,
     viewport: { width: 1280, height: 720 },
+    actionTimeout: 10_000,
+    navigationTimeout: 20_000,
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
-          slowMo: 1000,
+          slowMo: 300,
         },
       },
     },
   ],
 
-  /* Run your local dev server before starting the tests */
   webServer: [
     {
       command: 'node server.js',
