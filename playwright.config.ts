@@ -17,19 +17,33 @@ export default defineConfig({
   testDir: './public/tests',
   testMatch: /.*\.spec\.ts/,
 
+  timeout: 120_000,
+  expect: {
+    timeout: 10_000,
+  },
+
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: 0,
   workers: 1,
-  reporter: 'html',
+
+  reporter: [['html', { open: 'never' }]],
 
   use: {
     baseURL: `http://127.0.0.1:${frontendPort}`,
-    trace: 'on-first-retry',
-    headless: true,
+    headless: false,
     viewport: { width: 1280, height: 720 },
-    actionTimeout: 10_000,
-    navigationTimeout: 20_000,
+
+    actionTimeout: 20_000,
+    navigationTimeout: 40_000,
+
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+
+    launchOptions: {
+      slowMo: 500,
+    },
   },
 
   projects: [
@@ -37,9 +51,6 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        launchOptions: {
-          slowMo: 300,
-        },
       },
     },
   ],
@@ -55,7 +66,7 @@ export default defineConfig({
       },
       url: `http://127.0.0.1:${backendPort}`,
       reuseExistingServer: true,
-      timeout: 120 * 1000,
+      timeout: 120_000,
     },
     {
       command: 'npm run dev',
@@ -72,7 +83,7 @@ export default defineConfig({
       },
       url: `http://127.0.0.1:${frontendPort}`,
       reuseExistingServer: true,
-      timeout: 120 * 1000,
+      timeout: 120_000,
     },
   ],
 });
