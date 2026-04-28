@@ -42,7 +42,7 @@ const TEST_CAMPS = {
   pastOnly: {
     name: `PW Camp A Past Only ${RUN_ID}`,
     price: 500,
-    picture: 'https://example.com/camp-a.jpg',
+    picture: 'https://drive.google.com/uc?export=view&id=14tuVuLsyAFTlUr7wGzMWOpZj_9Kx7t5C',
     address: '123 Forest Road',
     district: 'Mueang',
     province: 'Chiang Mai',
@@ -53,7 +53,7 @@ const TEST_CAMPS = {
   active: {
     name: `PW Camp B Active ${RUN_ID}`,
     price: 1200,
-    picture: 'https://example.com/camp-b.jpg',
+    picture: 'https://drive.google.com/uc?export=view&id=14tuVuLsyAFTlUr7wGzMWOpZj_9Kx7t5C',
     address: '55 River Road',
     district: 'Mae Rim',
     province: 'Chiang Mai',
@@ -64,7 +64,7 @@ const TEST_CAMPS = {
   sunny: {
     name: `PW Sunny Pines ${RUN_ID}`,
     price: 500,
-    picture: 'https://example.com/sunny.jpg',
+    picture: 'https://drive.google.com/uc?export=view&id=14tuVuLsyAFTlUr7wGzMWOpZj_9Kx7t5C',
     address: '123 Forest Road',
     district: 'Mueang',
     province: 'Chiang Mai',
@@ -75,7 +75,7 @@ const TEST_CAMPS = {
   central: {
     name: `PW Central Lake ${RUN_ID}`,
     price: 900,
-    picture: 'https://example.com/lake.jpg',
+    picture: 'https://drive.google.com/uc?export=view&id=14tuVuLsyAFTlUr7wGzMWOpZj_9Kx7t5C',
     address: '99 Lake Road',
     district: 'Pathum Wan',
     province: 'Bangkok',
@@ -86,7 +86,7 @@ const TEST_CAMPS = {
   duplicate: {
     name: `PW Duplicate Camp ${RUN_ID}`,
     price: 650,
-    picture: 'https://example.com/duplicate.jpg',
+    picture: 'https://drive.google.com/uc?export=view&id=14tuVuLsyAFTlUr7wGzMWOpZj_9Kx7t5C',
     address: 'Duplicate Road',
     district: 'Mueang',
     province: 'Chiang Mai',
@@ -737,7 +737,7 @@ test.describe('US2-3 Edit Campground', () => {
     await fillCampgroundForm(page, {
       name: `PW Updated Camp ${RUN_ID}`,
       price: 750,
-      picture: 'https://example.com/new.jpg',
+      picture: 'https://drive.google.com/uc?export=view&id=14tuVuLsyAFTlUr7wGzMWOpZj_9Kx7t5C',
       tel: '0899999999',
     });
     await page.getByRole('button', { name: /save changes/i }).click();
